@@ -6,7 +6,10 @@ import Profile from "@/components/Profile.vue";
   <div>
     <div class="header">
       <div class="links">
-        <router-link to="/"><img src="@/assets/favicon.ico" height="32px" alt="Home"></router-link>
+        <router-link to="/">
+          <svg viewBox="0 0 16 16" fill="currentColor"
+               xmlns="http://www.w3.org/2000/svg"><path d="M15.45,7L14,5.551V2c0-0.55-0.45-1-1-1h-1c-0.55,0-1,0.45-1,1v0.553L9,0.555C8.727,0.297,8.477,0,8,0S7.273,0.297,7,0.555  L0.55,7C0.238,7.325,0,7.562,0,8c0,0.563,0.432,1,1,1h1v6c0,0.55,0.45,1,1,1h3v-5c0-0.55,0.45-1,1-1h2c0.55,0,1,0.45,1,1v5h3  c0.55,0,1-0.45,1-1V9h1c0.568,0,1-0.437,1-1C16,7.562,15.762,7.325,15.45,7z"/></svg>
+        </router-link>
         <router-link to="/vertretungsplan">Vertretungsplan</router-link>
         <router-link to="/books">Bücher</router-link>
         <router-link to="/supervision">Aufsichten</router-link>
@@ -70,6 +73,11 @@ a:active {
 
 a.router-link-active {
   color: var(--text-dark);
+}
+
+svg {
+  width: 32px;
+  height: 32px;
 }
 
 body {

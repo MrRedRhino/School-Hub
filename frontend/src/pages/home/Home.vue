@@ -20,6 +20,6 @@ import TodoWidget from "@/pages/home/TodoWidget.vue";
 
 .widgets * {
   margin-bottom: 15px;
-  min-width: min(500px, calc(100% - 20px));
+  width: min(500px, calc(100% - 20px));
 }
 </style>
