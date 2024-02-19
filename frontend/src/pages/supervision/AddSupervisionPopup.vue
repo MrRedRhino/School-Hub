@@ -28,7 +28,7 @@ function getButtonText(breakNum) {
 
 async function signIn(breakNum) {
   const dateString = `${date.year}-${date.month}-${date.day}`;
-  await fetch(`http://localhost:4000/api/supervisions/${dateString}?break=${breakNum}`, {
+  await fetch(`https://hub.pipeman.org/api/supervisions/${dateString}?break=${breakNum}`, {
     method: isSignedIn(breakNum) ? "DELETE" : "PUT"
   });
 
