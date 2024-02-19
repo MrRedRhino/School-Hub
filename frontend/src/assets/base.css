@@ -1,0 +1,58 @@
+body[data-theme="dark"] {
+    --background: #2b2d30;
+    --blue: #335fb0;
+    --text: #b0bac5;
+    --text-dark: #828891;
+    --background-dark: #222225;
+}
+
+body[data-theme="light"] {
+    --background: #fafafa;
+    --blue: #9394a5;
+    --text: black;
+    --text-dark: #484b6a;
+    --background-dark: #e4e5f1;
+}
+
+body[data-theme="hub"] {
+    --background: #292929;
+    --blue: #fa9300;
+    --text: #ffffff;
+    --text-dark: #808080;
+    --background-dark: #1b1b1b;
+}
+
+* {
+    font-family: Arial, serif;
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: var(--background);
+}
+
+.button-primary {
+    background: var(--blue);
+    border: none;
+    border-radius: 10px;
+    height: 34px;
+    color: var(--text);
+    font-size: 16px;
+    cursor: pointer;
+    width: 100%;
+    transition-duration: 0.1s;
+}
+
+.button-primary:disabled {
+    background: var(--background-dark);
+    cursor: default;
+}
+
+.button-primary:active {
+    scale: 0.9;
+}
+
+.page {
+    margin: 0 !important;
+}
