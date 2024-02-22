@@ -29,7 +29,7 @@ public class LoginApi {
             throw new BadRequestResponse("Illegal name");
         }
 
-        List<Recipient> recipients = Main.getIlaw().getMessageRecipients(username);
+        List<Recipient> recipients = Main.getIlaw().getMessageRecipients(username.replace(".", " "));
 
         if (recipients.size() != 1) {
             throw new BadRequestResponse("Illegal name");

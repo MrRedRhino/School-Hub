@@ -29,11 +29,11 @@ public class User {
     }
 
     public static Optional<User> fromRequest(Context ctx) {
-        String cookie = "MY28TW02JxoYUrqDai7uAT2BZbMXtY954XLr8GJ98u";
-//        String cookie = ctx.cookie("auth");
-//        if (cookie == null) {
-//            return Optional.empty();
-//        }
+//        String cookie = "MY28TW02JxoYUrqDai7uAT2BZbMXtY954XLr8GJ98u";
+        String cookie = ctx.cookie("auth");
+        if (cookie == null) {
+            return Optional.empty();
+        }
 
         return Database.getJdbi().withHandle(h -> h.createQuery("""
                         SELECT user_id
