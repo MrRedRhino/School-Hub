@@ -30,7 +30,7 @@ public class AI {
         Database.getJdbi().useHandle(h -> h.createUpdate("""
                         INSERT INTO books_summaries (book, page, summary)
                         VALUES (:book, :page, :summary)
-                        ON CONFLICT DO UPDATE SET summary = :summary
+                        ON CONFLICT (book, page) DO UPDATE SET summary = :summary
                         """)
                 .bind("book", bookId)
                 .bind("page", page)
