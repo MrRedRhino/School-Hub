@@ -5,6 +5,7 @@ import org.pipeman.Database;
 
 import java.beans.ConstructorProperties;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
@@ -16,12 +17,12 @@ public class Live {
         client.keepAlive();
         client.onClose(() -> sseClients.remove(client));
 
-        client.sendEvent("add_reservations", getReservations());
+        client.sendEvent("set_reservations", getReservations());
     }
 
     public static void broadcastRemoveReservation(String seatId) {
         for (SseClient client : sseClients) {
-            client.sendEvent("remove_reservation", seatId);
+            client.sendEvent("remove_reservation", Map.of("seat", seatId));
         }
     }
 
