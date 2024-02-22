@@ -36,10 +36,10 @@ function collectAnalytics() {
     if (lastPath !== location.href) {
         lastPath = location.href;
 
-        const uid = account.value?.id || "no-auth";
-        fetch(`https://analytics.pipeman.org/api/gather?uid=${uid}&url=${location.href}&referrer=${document.referrer}`, {
-            method: "POST"
-        }).then();
+        // const uid = account.value?.id || "no-auth";
+        // fetch(`https://analytics.pipeman.org/api/gather?uid=${uid}&url=${location.href}&referrer=${document.referrer}`, {
+        //     method: "POST"
+        // }).then();
     }
 }
 

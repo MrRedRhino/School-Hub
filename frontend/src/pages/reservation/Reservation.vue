@@ -1,7 +1,11 @@
 <script setup>
 
-import {ref} from "vue";
+import {getCurrentInstance, ref} from "vue";
+import {openPopup} from "@/popup.js";
+import SeatPopup from "@/pages/reservation/SeatPopup.vue";
+import {requireAuth} from "@/auth.js";
 
+const {appContext} = getCurrentInstance();
 const seats = [
   {x: 5, y: 0, angle: 0, id: "R1"},
   {x: 65, y: 0, angle: 0, id: "R2"},
@@ -247,6 +251,7 @@ eventSource.addEventListener("set_reservations", event => {
   }
   reservations.value = newSeats;
 });
+// TODO show reservations left
 
 eventSource.addEventListener("remove_reservation", event => {
   const json = JSON.parse(event.data);
@@ -259,7 +264,9 @@ eventSource.addEventListener("add_reservation", event => {
 });
 
 function reserveSeat(seat) {
-
+  requireAuth("einen Platz zu reservieren", appContext, () => {
+    openPopup(SeatPopup, appContext, {"seat-id": seat, reservations: reservations});
+  });
 }
 </script>
 
@@ -268,8 +275,7 @@ function reserveSeat(seat) {
     <div v-for="seat in seats"
          class="seat"
          :style="{transform: `translate(${seat.x}px, ${seat.y}px) rotate(${seat.angle + 'deg'})`, background: reservations[seat.id] ? 'white' : 'green'}"
-    @click="reserveSeat(seat.id)"
-    >
+         @click="reserveSeat(seat.id)">
     </div>
   </div>
 </template>
@@ -282,7 +288,6 @@ function reserveSeat(seat) {
   border-top-right-radius: 50%;
   border-top-left-radius: 50%;
   cursor: pointer;
-  //background-color: white;
 }
 
 .plan {
