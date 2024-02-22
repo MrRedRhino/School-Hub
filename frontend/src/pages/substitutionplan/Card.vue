@@ -5,7 +5,7 @@ const {day} = defineProps(["day"]);
 const data = ref(null);
 const error = ref(false);
 
-fetch(`https://hub.pipeman.org/api/plans/${day}?format=json`)
+fetch(`/api/plans/${day}?format=json`)
     .then(r => r.json().then(json => data.value = json))
     .catch(() => error.value = true);
 </script>

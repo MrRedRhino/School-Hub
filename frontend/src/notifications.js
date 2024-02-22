@@ -1,4 +1,4 @@
-// navigator.serviceWorker.register("https://hub.pipeman.org/assets/notification-worker.js").then();
+// navigator.serviceWorker.register("http://localhost:4000/assets/notification-worker.js").then();
 
 export async function loadNotifications() {
     const serviceWorker = await navigator.serviceWorker.ready;
@@ -19,7 +19,7 @@ export async function disableNotifications() {
     const subscription = await serviceWorker.pushManager.getSubscription();
 
     const endpoint = encodeURIComponent(subscription.endpoint);
-    await fetch("https://hub.pipeman.org/api/subscriptions/?endpoint=" + endpoint, {
+    await fetch("/api/subscriptions/?endpoint=" + endpoint, {
         method: "DELETE"
     });
 
@@ -35,7 +35,7 @@ export async function subscribe() {
     });
 
     const jsonSub = JSON.parse(JSON.stringify(subscription));
-    await fetch("https://hub.pipeman.org/api/subscriptions", {
+    await fetch("/api/subscriptions", {
         method: "PUT",
         body: JSON.stringify({
             "endpoint": subscription.endpoint,

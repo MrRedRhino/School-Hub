@@ -61,7 +61,7 @@ function formatZoom(zoom) {
 }
 
 async function openBook(id, page = 1) {
-  const book = await fetch(`https://hub.pipeman.org/api/books/${id}`);
+  const book = await fetch(`/api/books/${id}`);
   if (book.status > 200) return;
 
   currentBook.value = await book.json();
@@ -78,7 +78,7 @@ async function setPage(page) {
   runPendingSaveNow();
   currentPage.value = page;
 
-  const html = await fetch(`https://hub.pipeman.org/api/books/${currentBook.value["id"]}/${page}`);
+  const html = await fetch(`/api/books/${currentBook.value["id"]}/${page}`);
   pageContent.value = await html.text();
   history.replaceState(null, "", `/books?book=${currentBook.value.id}&page=${page}`);
 
@@ -199,7 +199,7 @@ function configureContext(ctx) {
 
 async function saveAnnotations() {
   saveId = null;
-  await fetch(`https://hub.pipeman.org/api/books/${currentBook.value["id"]}/${currentPage.value}/annotations`, {
+  await fetch(`/api/books/${currentBook.value["id"]}/${currentPage.value}/annotations`, {
     method: "PUT",
     body: JSON.stringify(lines)
   });
@@ -218,7 +218,7 @@ async function pageChanged() {
   canvasElement.value.height = height;
   liveCanvas.value.height = height;
 
-  const annotations = await fetch(`https://hub.pipeman.org/api/books/${currentBook.value["id"]}/${currentPage.value}/annotations`);
+  const annotations = await fetch(`/api/books/${currentBook.value["id"]}/${currentPage.value}/annotations`);
   loadAnnotations(await annotations.json());
 }
 
@@ -286,7 +286,7 @@ async function changePage(delta) {
 
 async function search(event) {
   const query = encodeURIComponent(event.target.value);
-  const response = await fetch(`https://hub.pipeman.org/api/books/search-completions?query=${query}`)
+  const response = await fetch(`/api/books/search-completions?query=${query}`)
   searchResults.value = await response.json();
 }
 

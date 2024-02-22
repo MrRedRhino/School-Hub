@@ -12,7 +12,7 @@ function imageSrc() {
 }
 
 async function logout() {
-  await fetch("https://hub.pipeman.org/api/account/logout", {
+  await fetch("/api/account/logout", {
     method: "POST"
   });
   hideOptions();

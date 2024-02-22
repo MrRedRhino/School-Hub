@@ -13,7 +13,7 @@ import Profile from "@/components/Profile.vue";
         <router-link to="/vertretungsplan">Vertretungsplan</router-link>
         <router-link to="/books">Bücher</router-link>
         <router-link to="/supervision">Aufsichten</router-link>
-        <router-link to="/abifeier">Abifeier Reservierung</router-link>
+<!--        <router-link to="/reservation">Abifeier Reservierung</router-link>-->
       </div>
 
       <Profile class="profile"></Profile>

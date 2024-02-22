@@ -59,7 +59,7 @@ const dayNames = [
 
 async function updateCalendar() {
   const newSupervisions = {};
-  await fetch("https://hub.pipeman.org/api/supervisions").then(r => r.json().then(json => {
+  await fetch("/api/supervisions").then(r => r.json().then(json => {
     for (let key in json) {
       const split = key.split("-");
       const year = parseInt(split[0]);

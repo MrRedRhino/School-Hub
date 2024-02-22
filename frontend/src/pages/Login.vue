@@ -19,7 +19,7 @@ async function sendCode() {
     return;
   }
 
-  const response = await fetch(`https://hub.pipeman.org/api/login/?name=${encodeURIComponent(name.value)}`, {
+  const response = await fetch(`/api/login/?name=${encodeURIComponent(name.value)}`, {
     method: "POST"
   });
 
@@ -40,7 +40,7 @@ async function sendCodeButtonPressed() {
 async function login() {
   codeInvalid.value = code.value.length <= 0;
 
-  const response = await fetch(`https://hub.pipeman.org/api/login/verify?code=${encodeURIComponent(code.value)}`, {
+  const response = await fetch(`/api/login/verify?code=${encodeURIComponent(code.value)}`, {
     method: "POST"
   });
 
@@ -69,7 +69,7 @@ async function login() {
   <div class="wrapper">
     <div class="login">
       <h2>Dein Fronter-Name</h2>
-      <input v-model.trim="name" placeholder="Chuck Norris">
+      <input v-model.trim="name" placeholder="z.B. Pelz, Samuel">
       <h3 v-if="nameInvalid">Unbekannter Name. Probiere "Vorname Nachname"</h3>
       <button class="button-primary" @click="sendCodeButtonPressed" :disabled="nameDisabled">{{codeSent ? "Erneut senden" : "Code senden"}}</button>
 

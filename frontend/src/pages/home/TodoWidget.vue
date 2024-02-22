@@ -16,7 +16,7 @@ const date = ref(currentDate);
 const {appContext} = getCurrentInstance();
 
 async function loadTasks() {
-  const response = await fetch(`https://hub.pipeman.org/api/todos`);
+  const response = await fetch(`/api/todos`);
   const body = await response.json();
 
   tasks.value = body["todos"];
@@ -53,7 +53,7 @@ async function addTask() {
   const taskDate = showDateInput.value ? encodeURIComponent(formattedDate) : "";
 
   newTask.value = "";
-  const response = await fetch(`https://hub.pipeman.org/api/todos/?task=${task}&date-due=${taskDate}`, {
+  const response = await fetch(`http://localhost:4000/api/todos/?task=${task}&date-due=${taskDate}`, {
     method: "PUT"
   });
 
@@ -67,7 +67,7 @@ async function addTask() {
 }
 
 async function completeTask(event, id) {
-  const response = await fetch(`https://hub.pipeman.org/api/todos/${id}`, {
+  const response = await fetch(`http://localhost:4000/api/todos/${id}`, {
     method: "DELETE"
   });
 
@@ -80,7 +80,7 @@ async function completeTask(event, id) {
 }
 
 async function uncompleteTask(event, id) {
-  const response = await fetch(`https://hub.pipeman.org/api/todos/${id}`, {
+  const response = await fetch(`http://localhost:4000/api/todos/${id}`, {
     method: "PUT"
   });
 
@@ -110,7 +110,7 @@ async function editTodo(task) {
 
   const taskString = encodeURIComponent(task.task);
   const taskDate = task.dateDue ? encodeURIComponent(task.dateDue) : "";
-  await fetch(`https://hub.pipeman.org/api/todos/${task.id}?task=${taskString}&date-due=${taskDate}`, {
+  await fetch(`http://localhost:4000/api/todos/${task.id}?task=${taskString}&date-due=${taskDate}`, {
     method: "PATCH"
   });
 }

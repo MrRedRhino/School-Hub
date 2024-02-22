@@ -10,9 +10,10 @@ import NotFound from "@/pages/NotFound.vue";
 import ClickOutsideDirective from "@/ClickOutsideDirective.js";
 import SubstitutionPlan from "@/pages/substitutionplan/SubstitutionPlan.vue";
 import Home from "@/pages/home/Home.vue";
-import {account, fetchAccount} from "@/auth.js";
+import {fetchAccount} from "@/auth.js";
 import Settings from "@/pages/Settings.vue";
 import Supervision from "@/pages/supervision/Supervision.vue";
+import Reservation from "@/pages/reservation/Reservation.vue";
 
 const routes = [
     {path: "/", component: Home, meta: {title: ""}},
@@ -21,6 +22,7 @@ const routes = [
     {path: "/login", component: Login, meta: {title: "Login"}},
     {path: "/supervision", component: Supervision, meta: {title: "Supervision"}},
     {path: "/settings", component: Settings, meta: {title: "Einstellungen"}},
+    {path: "/reservation", component: Reservation, meta: {title: "Sitzplatz Reservierung"}},
     {path: "/:pathMatch(.*)*", component: NotFound, meta: {title: "404"}}
 ];
 let lastPath = null;

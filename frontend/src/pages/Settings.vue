@@ -38,13 +38,13 @@ async function toggleNotifications(enabled) {
 async function save() {
   saveDisabled.value = true;
 
-  await fetch("https://hub.pipeman.org/api/account/settings", {
+  await fetch("/api/account/settings", {
     method: "PATCH",
     body: JSON.stringify(settings)
   });
   Object.assign(account.value.settings, settings);
 
-  await fetch("https://hub.pipeman.org/api/account/course-filter", {
+  await fetch("/api/account/course-filter", {
     method: "PATCH",
     body: courseFilter.value
   });

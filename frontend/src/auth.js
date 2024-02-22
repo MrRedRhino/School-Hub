@@ -18,7 +18,7 @@ watch(account, value => {
 });
 
 export function fetchAccount() {
-    return fetch("https://hub.pipeman.org/api/account").then(async r => {
+    return fetch("/api/account").then(async r => {
         if (r.status === 200) {
             account.value = await r.json();
         } else {
