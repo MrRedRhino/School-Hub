@@ -1,9 +1,9 @@
 <script setup>
 
-import {getCurrentInstance, ref} from "vue";
+import {computed, getCurrentInstance, ref} from "vue";
 import {openPopup} from "@/popup.js";
 import SeatPopup from "@/pages/reservation/SeatPopup.vue";
-import {requireAuth} from "@/auth.js";
+import {account, requireAuth} from "@/auth.js";
 
 const {appContext} = getCurrentInstance();
 const seats = [
@@ -243,34 +243,61 @@ const seats = [
 ]
 const reservations = ref({});
 
-const eventSource = new EventSource("http://localhost:4000/api/reservations/live");
-eventSource.addEventListener("set_reservations", event => {
-  const newSeats = {};
-  for (let reservation of JSON.parse(event.data)) {
-    newSeats[reservation["seat"]] = reservation["name"];
+let maxSeats = null;
+const maxSeatsReached = computed(() => {
+  let count = 0;
+  for (const reservation in reservations.value) {
+    if (reservations.value[reservation] === account.value.name) {
+      count++;
+    }
   }
-  reservations.value = newSeats;
-});
-// TODO show reservations left
-
-eventSource.addEventListener("remove_reservation", event => {
-  const json = JSON.parse(event.data);
-  delete reservations.value[json["seat"]];
+  return maxSeats !== null && count >= maxSeats;
 });
 
-eventSource.addEventListener("add_reservation", event => {
-  const newSeat = JSON.parse(event.data);
-  reservations.value[newSeat["seat"]] = newSeat["name"];
-});
+let eventSource;
+let reconnect = null;
+
+function connect() {
+  eventSource = new EventSource("http://localhost:4000/api/reservations/live");
+
+  eventSource.addEventListener("set_reservations", event => {
+    const newSeats = {};
+    const data = JSON.parse(event.data);
+    for (let reservation of data["reservations"]) {
+      newSeats[reservation["seat"]] = reservation["name"];
+    }
+    reservations.value = newSeats;
+    maxSeats = data["max-seats"];
+  });
+
+  eventSource.addEventListener("remove_reservation", event => {
+    const json = JSON.parse(event.data);
+    delete reservations.value[json["seat"]];
+  });
+
+  eventSource.addEventListener("add_reservation", event => {
+    const newSeat = JSON.parse(event.data);
+    reservations.value[newSeat["seat"]] = newSeat["name"];
+  });
+
+  clearTimeout(reconnect);
+  eventSource.onerror = () => {
+    reconnect = setTimeout(connect, 2000);
+  };
+}
+
+connect();
 
 function reserveSeat(seat) {
   requireAuth("einen Platz zu reservieren", appContext, () => {
-    openPopup(SeatPopup, appContext, {"seat-id": seat, reservations: reservations});
+    openPopup(SeatPopup, appContext, {"seat-id": seat, reservations: reservations, "max-seats-reached": maxSeatsReached});
   });
 }
 </script>
 
 <template>
+  <h1>{{ maxSeatsReached }}</h1>
+
   <div class="plan">
     <div v-for="seat in seats"
          class="seat"

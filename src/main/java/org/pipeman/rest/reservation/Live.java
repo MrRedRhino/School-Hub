@@ -1,6 +1,7 @@
 package org.pipeman.rest.reservation;
 
 import io.javalin.http.sse.SseClient;
+import org.pipeman.Config;
 import org.pipeman.Database;
 
 import java.beans.ConstructorProperties;
@@ -17,7 +18,10 @@ public class Live {
         client.keepAlive();
         client.onClose(() -> sseClients.remove(client));
 
-        client.sendEvent("set_reservations", getReservations());
+        client.sendEvent("set_reservations", Map.of(
+                "reservations", getReservations(),
+                "max-seats", Config.get().maxSeatsPerPerson
+        ));
     }
 
     public static void broadcastRemoveReservation(String seatId) {
@@ -28,10 +32,10 @@ public class Live {
 
     public static void broadcastAddReservation(long userId, String seatId) {
         String name = Database.getJdbi().withHandle(h -> h.createQuery("""
-                            SELECT name
-                            FROM users
-                            WHERE id = :user_id
-                            """)
+                        SELECT name
+                        FROM users
+                        WHERE id = :user_id
+                        """)
                 .bind("user_id", userId)
                 .mapTo(String.class)
                 .first());
