@@ -9,7 +9,7 @@ const {appContext} = getCurrentInstance();
 const seats = [
   {x: 5, y: 0, angle: 0, id: "R1"},
   {x: 65, y: 0, angle: 0, id: "R2"},
-  {x: 125, y: 0, angle: 0, id: ""},
+  {x: 125, y: 0, angle: 0, id: "R3"},
   {x: 185, y: 0, angle: 0, id: ""},
   {x: -55, y: 0, angle: 0, id: ""},
   {x: -115, y: 0, angle: 0, id: ""},
@@ -293,15 +293,24 @@ function reserveSeat(seat) {
     openPopup(SeatPopup, appContext, {"seat-id": seat, reservations: reservations, "max-seats-reached": maxSeatsReached});
   });
 }
+
+function getColor(reservation) {
+  switch (reservation) {
+    case account.value.name:
+      return "#ff2046"
+    case undefined:
+      return "#00bf4b"
+    default:
+      return "#B3B3B3";
+  }
+}
 </script>
 
 <template>
-  <h1>{{ maxSeatsReached }}</h1>
-
   <div class="plan">
     <div v-for="seat in seats"
          class="seat"
-         :style="{transform: `translate(${seat.x}px, ${seat.y}px) rotate(${seat.angle + 'deg'})`, background: reservations[seat.id] ? 'white' : 'green'}"
+         :style="{transform: `translate(${seat.x}px, ${seat.y}px) rotate(${seat.angle + 'deg'})`, background: getColor(reservations[seat.id])}"
          @click="reserveSeat(seat.id)">
     </div>
   </div>
