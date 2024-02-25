@@ -11,17 +11,13 @@ import java.util.Collections;
 import java.util.List;
 
 public class PipeComplete {
-    private final JaroWinkler JW;
+    private static final JaroWinkler JW = new JaroWinkler(0.1);
 
-    public PipeComplete() {
-        JW = new JaroWinkler(0.1);
-    }
-
-    private float similarity(String s1, String s2) {
+    private static float similarity(String s1, String s2) {
         return Math.abs(s1.length() - s2.length()) > 3 ? 0 : (float) JW.similarity(s1, s2);
     }
 
-    private float getSimilarity(String query, Book book) {
+    private static float getSimilarity(String query, Book book) {
         int length = query.length();
         float similarity = 0;
         for (String word : book.searchTerms()) {
@@ -30,7 +26,7 @@ public class PipeComplete {
         return similarity;
     }
 
-    public List<Completion> getCompletions(String query) {
+    public static List<Completion> getCompletions(String query) {
         String q = query.toLowerCase();
         List<Completion> out = new ArrayList<>();
         for (Book book : BookIndex.INSTANCE.books().values()) {
@@ -39,7 +35,7 @@ public class PipeComplete {
         return out;
     }
 
-    public List<Book> getCompletionsSorted(String query) {
+    public static List<Book> getCompletionsSorted(String query) {
         List<Book> out = new ArrayList<>();
         if (query.isBlank()) return List.of();
 

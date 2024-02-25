@@ -6,16 +6,24 @@ import io.javalin.http.Context;
 import org.jetbrains.annotations.Nullable;
 import org.pipeman.Database;
 import org.pipeman.Main;
+import org.pipeman.books.BookIndex;
+import org.pipeman.books.search.PipeComplete;
 import org.pipeman.utils.LocalDateSerializer;
+import org.pipeman.utils.Utils;
 
+import java.beans.ConstructorProperties;
 import java.sql.Date;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class TodoApi {
+    private static final Pattern REFERENCED_BOOK_PATTERN = Pattern.compile("(?<subject>\\w+):[\\d\\D]+[SP]\\. (?<page>\\d{1,3})[\\d\\D]*");
+
     public static void getTodos(Context ctx) {
         long userId = LoginApi.getUser(ctx).id();
 
@@ -136,7 +144,25 @@ public class TodoApi {
             @JsonSerialize(using = ToStringSerializer.class) long id,
             String task,
             @Nullable @JsonSerialize(using = LocalDateSerializer.class) LocalDate dateDue,
-            @Nullable @JsonSerialize(using = LocalDateSerializer.class) LocalDate dateDone
+            @Nullable @JsonSerialize(using = LocalDateSerializer.class) LocalDate dateDone,
+            @Nullable Map<String, ?> referencedBook
     ) {
+        @ConstructorProperties({"id", "task", "date_due", "date_done"})
+        public Todo(long id, String task, @Nullable LocalDate dateDue, @Nullable LocalDate dateDone) {
+            this(id, task, dateDue, dateDone, dateDone == null ? null : parseReferencedBook(task));
+        }
+
+        private static @Nullable Map<String, ?> parseReferencedBook(String task) {
+            Matcher matcher = REFERENCED_BOOK_PATTERN.matcher(task);
+            if (!matcher.matches()) return null;
+
+            List<BookIndex.Book> book = PipeComplete.getCompletionsSorted(matcher.group("subject"));
+            if (book.isEmpty()) return null;
+
+            int page = Utils.parseInt(matcher.group("page")).orElse(-1);
+            if (page <= 0) return null;
+
+            return Map.of("book-id", book.get(0).id(), "page", page);
+        }
     }
 }

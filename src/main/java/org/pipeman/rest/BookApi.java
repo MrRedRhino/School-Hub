@@ -17,7 +17,7 @@ import java.util.Map;
 import java.util.Optional;
 
 public class BookApi {
-    private static final SearchParser COMPLETER = new SearchParser();
+    public static final SearchParser COMPLETER = new SearchParser();
 
     public static void getBook(Context ctx) {
         int book = ctx.pathParamAsClass("book", Integer.class).get();

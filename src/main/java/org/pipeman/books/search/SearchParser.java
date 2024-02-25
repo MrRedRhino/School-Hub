@@ -8,8 +8,6 @@ import java.util.List;
 import java.util.Map;
 
 public class SearchParser {
-    private final PipeComplete completer = new PipeComplete();
-
     private SplitResult splitQuery(String query) {
         List<Integer> numbers = new ArrayList<>();
         StringBuilder curNumber = new StringBuilder();
@@ -37,7 +35,7 @@ public class SearchParser {
         SplitResult splitResult = splitQuery(query);
         List<CompletionResult> out = new ArrayList<>();
 
-        for (BookIndex.Book book : completer.getCompletionsSorted(splitResult.rest())) {
+        for (BookIndex.Book book : PipeComplete.getCompletionsSorted(splitResult.rest())) {
             List<Integer> numbers = splitResult.numbers();
             if (numbers.isEmpty()) out.add(new CompletionResult(book, 1));
             else for (Integer number : numbers) out.add(new CompletionResult(book, number));
