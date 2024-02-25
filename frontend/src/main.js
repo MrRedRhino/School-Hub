@@ -10,7 +10,7 @@ import NotFound from "@/pages/NotFound.vue";
 import ClickOutsideDirective from "@/ClickOutsideDirective.js";
 import SubstitutionPlan from "@/pages/substitutionplan/SubstitutionPlan.vue";
 import Home from "@/pages/home/Home.vue";
-import {fetchAccount} from "@/auth.js";
+import {account, fetchAccount} from "@/auth.js";
 import Settings from "@/pages/Settings.vue";
 import Supervision from "@/pages/supervision/Supervision.vue";
 import Reservation from "@/pages/reservation/Reservation.vue";
@@ -36,10 +36,12 @@ function collectAnalytics() {
     if (lastPath !== location.href) {
         lastPath = location.href;
 
-        // const uid = account.value?.id || "no-auth";
-        // fetch(`https://analytics.pipeman.org/api/gather?uid=${uid}&url=${location.href}&referrer=${document.referrer}`, {
-        //     method: "POST"
-        // }).then();
+        if (process.env.NODE_ENV === "production") {
+            const uid = account.value?.id || "no-auth";
+            fetch(`https://analytics.pipeman.org/api/gather?uid=${uid}&url=${location.href}&referrer=${document.referrer}`, {
+                method: "POST"
+            }).then();
+        }
     }
 }
 
