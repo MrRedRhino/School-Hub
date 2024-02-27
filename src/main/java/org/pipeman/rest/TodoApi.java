@@ -149,7 +149,7 @@ public class TodoApi {
     ) {
         @ConstructorProperties({"id", "task", "date_due", "date_done"})
         public Todo(long id, String task, @Nullable LocalDate dateDue, @Nullable LocalDate dateDone) {
-            this(id, task, dateDue, dateDone, dateDone == null ? null : parseReferencedBook(task));
+            this(id, task, dateDue, dateDone, dateDone == null ? parseReferencedBook(task) : null);
         }
 
         private static @Nullable Map<String, ?> parseReferencedBook(String task) {

@@ -15,7 +15,7 @@ const newTask = ref("");
 const date = ref(currentDate);
 const {appContext} = getCurrentInstance();
 
-async function loadTasks() {
+async function updateList() {
   const response = await fetch(`/api/todos`);
   const body = await response.json();
 
@@ -47,23 +47,15 @@ function isOverdue(date) {
 }
 
 async function addTask() {
-  const rawTask = newTask.value;
   const task = encodeURIComponent(newTask.value);
   const formattedDate = new Date(date.value).toISOString().split('T')[0];
   const taskDate = showDateInput.value ? encodeURIComponent(formattedDate) : "";
 
   newTask.value = "";
-  const response = await fetch(`/api/todos/?task=${task}&date-due=${taskDate}`, {
+  await fetch(`/api/todos/?task=${task}&date-due=${taskDate}`, {
     method: "PUT"
   });
-
-  const json = await response.json();
-  tasks.value.unshift({
-    "id": json["id"],
-    "task": rawTask,
-    "dateDue": showDateInput.value ? formattedDate : null,
-    "dateDone": null
-  });
+  await updateList();
 }
 
 async function completeTask(event, id) {
@@ -74,7 +66,7 @@ async function completeTask(event, id) {
   if (response.status === 200) {
     setTimeout(() => {
       event.target.checked = false;
-      moveTodo(tasks.value, completedTasks.value, id);
+      updateList();
     }, 500);
   }
 }
@@ -87,21 +79,8 @@ async function uncompleteTask(event, id) {
   if (response.status === 200) {
     setTimeout(() => {
       event.target.checked = true;
-      moveTodo(completedTasks.value, tasks.value, id);
+      updateList();
     }, 500);
-  }
-}
-
-function moveTodo(sourceList, targetList, id) {
-  for (let i = 0; i < sourceList.length; i++) {
-    const task = sourceList[i];
-    if (task.id === id) {
-      task["dateDone"] = null;
-
-      targetList.unshift(task);
-      sourceList.splice(i, 1);
-      break;
-    }
   }
 }
 
@@ -113,9 +92,14 @@ async function editTodo(task) {
   await fetch(`/api/todos/${task.id}?task=${taskString}&date-due=${taskDate}`, {
     method: "PATCH"
   });
+  await updateList();
 }
 
-loadTasks();
+function openBook(book, page) {
+  window.open(`/books/?book=${book}&page=${page}`, "_blank");
+}
+
+updateList();
 </script>
 
 <template>
@@ -144,17 +128,32 @@ loadTasks();
     </div>
 
     <div class="list" v-if="!showCompletedTodos">
-      <label class="container" v-for="task in tasks" :for="task.id">
+      <label class="container" :class="{'wide': task['referencedBook']}"  v-for="task in tasks" :for="task.id">
         <div>
           <a :class="{overdue: isOverdue(task.dateDue)}">{{ task.task }}</a>
           <a v-if="task.dateDue !== null" class="date">Bis {{ formatDate(task.dateDue) }}</a>
         </div>
 
+        <button v-if="task['referencedBook']" class="edit-button"
+                @click="openBook(task['referencedBook']['book-id'], task['referencedBook']['page'])">
+          <svg width="32px" height="32px" viewBox="0 0 24 24" fill="none">
+            <path
+                d="M4 19V6.2C4 5.0799 4 4.51984 4.21799 4.09202C4.40973 3.71569 4.71569 3.40973 5.09202 3.21799C5.51984 3 6.0799 3 7.2 3H16.8C17.9201 3 18.4802 3 18.908 3.21799C19.2843 3.40973 19.5903 3.71569 19.782 4.09202C20 4.51984 20 5.0799 20 6.2V17H6C4.89543 17 4 17.8954 4 19ZM4 19C4 20.1046 4.89543 21 6 21H20M9 7H15M9 11H15M19 17V21"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
         <button class="edit-button" @click="openPopup(EditTodoPopup, appContext, {
             'current-date': currentDate,
             task: task,
             submit: editTodo
           })">
+          <svg width="28px" height="28px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <g>
+              <path fill-rule="evenodd" clip-rule="evenodd"
+                    d="M20.8477 1.87868C19.6761 0.707109 17.7766 0.707105 16.605 1.87868L2.44744 16.0363C2.02864 16.4551 1.74317 16.9885 1.62702 17.5692L1.03995 20.5046C0.760062 21.904 1.9939 23.1379 3.39334 22.858L6.32868 22.2709C6.90945 22.1548 7.44285 21.8693 7.86165 21.4505L22.0192 7.29289C23.1908 6.12132 23.1908 4.22183 22.0192 3.05025L20.8477 1.87868ZM18.0192 3.29289C18.4098 2.90237 19.0429 2.90237 19.4335 3.29289L20.605 4.46447C20.9956 4.85499 20.9956 5.48815 20.605 5.87868L17.9334 8.55027L15.3477 5.96448L18.0192 3.29289ZM13.9334 7.3787L3.86165 17.4505C3.72205 17.5901 3.6269 17.7679 3.58818 17.9615L3.00111 20.8968L5.93645 20.3097C6.13004 20.271 6.30784 20.1759 6.44744 20.0363L16.5192 9.96448L13.9334 7.3787Z"
+                    fill="currentColor"></path>
+            </g>
+          </svg>
         </button>
 
         <input :id="task.id" type="checkbox" @change="completeTask($event, task.id)">
@@ -193,16 +192,16 @@ loadTasks();
 .container div {
   display: flex;
   flex-direction: column;
-  width: calc(100% - 30px)
+  width: calc(100% - 34px);
+}
+
+.wide div {
+  width: calc(100% - 68px);
 }
 
 .edit-button {
   color: var(--text);
-  background-image: url("@/assets/edit-icon.svg");
-  background-repeat: no-repeat;
-  background-size: 70%;
-  background-position: center;
-  background-color: transparent;
+  background: none;
   width: 30px;
   height: 30px;
   margin: 0 0 0 auto;
