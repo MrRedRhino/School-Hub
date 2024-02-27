@@ -127,6 +127,7 @@ function addSupervision(date) {
 
 document.body.onscroll = () => {
   const scrollTop = document.documentElement.scrollTop;
+  if (monthWrapper.value === null) return;
   const element = findCurrentMonthHeader(scrollTop);
 
   if (element.offsetTop - scrollTop < 0) {
