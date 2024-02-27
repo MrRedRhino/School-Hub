@@ -3,7 +3,6 @@ import {computed, nextTick, onUnmounted, ref} from "vue";
 import Controls from "@/pages/books/Controls.vue";
 
 const htmlHolder = ref();
-const pageElement = ref();
 const bookDisplay = ref();
 const pageContent = ref("");
 const currentBook = ref(null);
@@ -76,11 +75,13 @@ async function openBook(id, page = 1) {
 
 async function setPage(page) {
   runPendingSaveNow();
+  page = Math.max(Math.min(page, currentBook.value["page-count"]), 1);
   currentPage.value = page;
 
   const html = await fetch(`/api/books/${currentBook.value["id"]}/${page}`);
   pageContent.value = await html.text();
-  history.replaceState(null, "", `/books?book=${currentBook.value.id}&page=${page}`);
+  history.replaceState(history.state, "", `/books?book=${currentBook.value.id}&page=${page}`);
+  localStorage.setItem("last-book", JSON.stringify({"book": currentBook.value.id, page: page}))
 
   await nextTick(() => {
     applyAutozoom();
@@ -301,19 +302,40 @@ function hideResults() {
   showResults.value = false;
 }
 
+function keyDown(event) {
+  if (event.metaKey || event.shiftKey) return;
+
+  switch (event.key) {
+    case "ArrowRight":
+      changePage(1);
+      break;
+    case "ArrowLeft":
+      changePage(-1);
+      break;
+  }
+}
+
 async function loadBookFromUrl() {
   const params = new URL(location.href).searchParams;
   if (params.has("book")) {
     await openBook(params.get("book"), parseInt(params.get("page") || 1));
+  } else {
+    const item = localStorage.getItem("last-book");
+    if (item !== null) {
+      const lastBook = JSON.parse(item);
+      await openBook(lastBook.book, lastBook.page);
+    }
   }
 }
 
 loadBookFromUrl();
 
 window.addEventListener("popstate", loadBookFromUrl, false);
+window.addEventListener("keydown", keyDown);
 
 onUnmounted(() => {
   window.removeEventListener("popstate", loadBookFromUrl, false);
+  window.removeEventListener("keydown", keyDown);
 });
 </script>
 
