@@ -303,6 +303,7 @@ function hideResults() {
 }
 
 function keyDown(event) {
+  if (document.activeElement !== document.body) return;
   if (event.metaKey || event.shiftKey) return;
 
   switch (event.key) {
@@ -341,7 +342,7 @@ onUnmounted(() => {
 
 <template>
   <div class="center" v-click-outside="hideResults">
-    <div class="search" :style="{opacity: showControls ? 1 : 0}">
+    <div class="search" :style="{opacity: showControls ? 1 : 0, 'pointer-events': showControls ? 'all' : 'none'}">
       <input @input="search($event)"
              @keydown.enter="searchEnterPressed"
              placeholder="Bücher suchen"
@@ -379,7 +380,7 @@ onUnmounted(() => {
       </div>
     </div>
   </div>
-  <div v-if="currentBook" class="center" :style="{opacity: showControls ? 1 : 0}">
+  <div v-if="currentBook" class="center" :style="{opacity: showControls ? 1 : 0, 'pointer-events': showControls ? 'all' : 'none'}">
     <Controls @change-page="changePage" @set-page="setPage" @change-zoom="changeZoom" @change-pencil="setPencil"
               :book="currentBook"
               :page="currentPage"
