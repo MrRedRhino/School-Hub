@@ -5,7 +5,11 @@ import RequireAuthPopup from "@/components/RequireAuthPopup.vue";
 export const account = ref(null);
 export const settings = reactive({});
 export const theme = computed({
-    get: () => settings.theme || "dark",
+    get: () => {
+        const value = settings.theme || "dark";
+        document.body.setAttribute("data-theme", value);
+        return value;
+    },
     set: value => {
         document.body.setAttribute("data-theme", value);
         settings.theme = value;
@@ -14,7 +18,6 @@ export const theme = computed({
 
 watch(account, value => {
     Object.assign(settings, value["settings"]);
-    theme.value = value["settings"]["theme"];
 });
 
 export function fetchAccount() {
