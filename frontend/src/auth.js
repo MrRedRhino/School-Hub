@@ -9,12 +9,12 @@ export const theme = computed({
     set: value => {
         document.body.setAttribute("data-theme", value);
         settings.theme = value;
-        console.log(value);
     }
 });
 
 watch(account, value => {
     Object.assign(settings, value["settings"]);
+    theme.value = value["settings"]["theme"];
 });
 
 export function fetchAccount() {
