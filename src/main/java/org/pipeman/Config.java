@@ -14,8 +14,6 @@ public class Config extends AbstractConfig {
     public final String ilUrl = this.get("its-learning-url", "https://your-school.itslearning.com");
     public final String ilPassword = this.get("its-learning-password", "Your password");
     public final String ilUser = this.get("its-learning-user", "Your name");
-    public final String ilTodayPlanId = this.get("its-learning-today-plan-id", "");
-    public final String ilTomorrowPlanId = this.get("its-learning-tomorrow-plan-id", "");
     public final String vapidPublicKey = this.get("vapid-public-key", "");
     public final String vapidPrivateKey = this.get("vapid-private-key", "");
     public final String vapidSubject = this.get("vapid-subject", "");

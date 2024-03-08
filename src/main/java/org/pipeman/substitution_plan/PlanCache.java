@@ -2,12 +2,14 @@ package org.pipeman.substitution_plan;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.RemovalCause;
 import org.pipeman.Config;
-import org.pipeman.Main;
-import org.pipeman.substitution_plan.notifications.NotificationHandler;
+import org.pipeman.Database;
+import org.pipeman.ilaw.ILAW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.beans.ConstructorProperties;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -15,6 +17,11 @@ import java.util.*;
 public class PlanCache {
     private static final Logger LOGGER = LoggerFactory.getLogger(PlanCache.class);
     private final Map<PlanIdentifier, byte[]> hashes = new HashMap<>();
+
+    private final LoadingCache<PlanIdentifier, Optional<PlanAccount>> userCache = Caffeine.newBuilder()
+            .maximumSize(10)
+            .evictionListener((PlanIdentifier key, Optional<PlanAccount> value, RemovalCause cause) -> value.ifPresent(account -> account.ilaw.close()))
+            .build(this::getAccount);
 
     private final LoadingCache<PlanIdentifier, Plan> cache = Caffeine.newBuilder()
             .expireAfterWrite(Duration.of(5, ChronoUnit.MINUTES))
@@ -42,12 +49,26 @@ public class PlanCache {
         new Timer(true).schedule(task, interval, interval);
     }
 
+    private Optional<PlanAccount> getAccount(PlanIdentifier identifier) {
+        return Database.getJdbi().withHandle(h -> h.createQuery("""
+                        SELECT username, password, today_plan_id, tomorrow_plan_id
+                        FROM substitution_accounts
+                        WHERE class = :class
+                        """)
+                .bind("class", identifier.clazz())
+                .mapTo(PlanAccount.class)
+                .findFirst());
+    }
+
     public Plan downloadPlan(PlanIdentifier identifier, boolean addToStaleCache) {
         long start = System.nanoTime();
 
-        Config config = Config.get();
-        String fileId = identifier.day() == Day.TODAY ? config.ilTodayPlanId : config.ilTomorrowPlanId;
-        Plan plan = new Plan(Main.getIlaw().downloadOnedriveFile(fileId));
+        Optional<PlanAccount> optionalAccount = userCache.get(identifier);
+        if (optionalAccount.isEmpty()) return null;
+
+        PlanAccount account = optionalAccount.get();
+        String fileId = account.planId(identifier.day());
+        Plan plan = new Plan(account.ilaw().downloadOnedriveFile(fileId));
 
         LOGGER.info("Took {}ms to download plan", (System.nanoTime() - start) / 1_000_000);
 
@@ -75,5 +96,20 @@ public class PlanCache {
 
     public Plan getCachedPlan(PlanIdentifier plan) {
         return staleCache.get(plan);
+    }
+
+    public record PlanAccount(String username, String password, String todayPlanId, String tomorrowPlanId, ILAW ilaw) {
+        @ConstructorProperties({"username", "password", "today_plan_id", "tomorrow_plan_id"})
+        public PlanAccount(String username, String password, String todayPlanId, String tomorrowPlanId) {
+            this(username, password, todayPlanId, tomorrowPlanId, getIlaw(username, password));
+        }
+
+        private static ILAW getIlaw(String username, String password) {
+            return ILAW.login(Config.get().ilUrl, username, password);
+        }
+
+        public String planId(Day day) {
+            return day == Day.TODAY ? todayPlanId : tomorrowPlanId;
+        }
     }
 }

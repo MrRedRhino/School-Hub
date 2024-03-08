@@ -1,9 +1,6 @@
 package org.pipeman.ilaw;
 
-import javax.security.auth.login.LoginException;
-import java.io.IOException;
 import java.net.URISyntaxException;
-import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
@@ -34,4 +31,6 @@ public interface ILAW {
     List<Recipient> getMessageRecipients(String search);
 
     byte[] downloadOnedriveFile(String fileId);
+
+    void close();
 }

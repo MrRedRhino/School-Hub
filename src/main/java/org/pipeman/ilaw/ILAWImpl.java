@@ -5,11 +5,9 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.pipeman.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.security.auth.login.LoginException;
 import java.io.IOException;
 import java.net.CookieManager;
 import java.net.URI;
@@ -31,13 +29,14 @@ public class ILAWImpl implements ILAW {
     private final String username;
     private final String password;
     private String antiForgeryToken = null;
+    private final Timer keepAliveTimer;
 
     ILAWImpl(String url, String username, String password) throws URISyntaxException, LoginException {
         this.url = url;
         this.username = username;
         this.password = password;
         login();
-        startKeepaliveTimer();
+        keepAliveTimer = startKeepaliveTimer();
     }
 
     private synchronized void login() throws LoginException {
@@ -55,13 +54,14 @@ public class ILAWImpl implements ILAW {
             throw new LoginException();
         }
 
-        LOGGER.info("Itslearning login successful! Took " + (System.nanoTime() - start) / 1_000_000 + "ms");
+        LOGGER.info("Itslearning login successful! Took {}ms", (System.nanoTime() - start) / 1_000_000);
     }
 
-    private void startKeepaliveTimer() {
+    private Timer startKeepaliveTimer() {
         long interval = Duration.ofMinutes(20).toMillis();
 
-        new Timer("ILAW-Keepalive", true).schedule(new TimerTask() {
+        Timer timer = new Timer("ILAW-Keepalive", true);
+        timer.schedule(new TimerTask() {
             @Override
             public void run() {
                 HttpRequest messageRequest = HttpRequest.newBuilder(URI.create(url + "/restapi/keepalive/lastactivity/v1"))
@@ -73,6 +73,7 @@ public class ILAWImpl implements ILAW {
                 sendRequest(messageRequest, BodyHandlers.discarding());
             }
         }, interval, interval);
+        return timer;
     }
 
     private String getLoginBody(String username, String password) {
@@ -168,12 +169,12 @@ public class ILAWImpl implements ILAW {
     public <T> HttpResponse<T> sendRequest(HttpRequest request, HttpResponse.BodyHandler<T> handler) {
         try {
             HttpResponse<T> response = HTTP_CLIENT.send(request, handler);
-            LOGGER.info(request.uri() + ": " + response.statusCode());
+            LOGGER.info("{}: {}", request.uri(), response.statusCode());
 
             if (isUnauthorized(response)) {
                 login();
                 response = HTTP_CLIENT.send(request, handler);
-                LOGGER.info(request.uri() + ": " + response.statusCode());
+                LOGGER.info("{}: {}", request.uri(), response.statusCode());
             }
 
             return response;
@@ -213,5 +214,11 @@ public class ILAWImpl implements ILAW {
             LOGGER.error("Failed to download file", e);
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public void close() {
+        LOGGER.info("Closing ILAW");
+        keepAliveTimer.cancel();
     }
 }

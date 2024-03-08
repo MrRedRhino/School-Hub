@@ -5,15 +5,12 @@ import de.mkammerer.snowflakeid.SnowflakeIdGenerator;
 import io.javalin.Javalin;
 import io.javalin.community.ssl.SslPlugin;
 import io.javalin.json.JavalinJackson;
-import io.javalin.plugin.bundled.CorsPluginConfig;
 import org.pipeman.ilaw.ILAW;
 import org.pipeman.rest.*;
 import org.pipeman.rest.reservation.ReservationApi;
 import org.pipeman.substitution_plan.PdfDataSerializer;
 import org.pipeman.substitution_plan.PlanData;
 import org.pipeman.utils.LazyInitializer;
-
-import javax.security.auth.login.LoginException;
 
 import java.time.LocalDate;
 
@@ -42,7 +39,7 @@ public class Main {
 
             config.showJavalinBanner = false;
 
-            config.bundledPlugins.enableCors(c -> c.addRule(CorsPluginConfig.CorsRule::anyHost));
+//            config.bundledPlugins.enableCors(c -> c.addRule(CorsPluginConfig.CorsRule::anyHost));
 
             config.router.apiBuilder(() -> {
                 path("api", () -> {
@@ -64,14 +61,9 @@ public class Main {
                         delete(SubscriptionApi::removeSubscription);
                     });
 
-                    path("plans", () -> {
+                    path("plans/{class}", () -> {
                         get("today", SubstitutionApi::getPlanToday);
                         get("tomorrow", SubstitutionApi::getPlanTomorrow);
-
-                        path("for-you", () -> {
-                            get("today", SubstitutionApi::getForYouToday);
-                            get("tomorrow", SubstitutionApi::getForYouTomorrow);
-                        });
                     });
 
                     path("books", () -> {
@@ -114,12 +106,8 @@ public class Main {
     }
 
     private static ILAW ilawLogin() {
-        try {
-            Config config = Config.get();
-            return ILAW.login(config.ilUrl, config.ilUser, config.ilPassword);
-        } catch (LoginException e) {
-            throw new RuntimeException(e);
-        }
+        Config config = Config.get();
+        return ILAW.login(config.ilUrl, config.ilUser, config.ilPassword);
     }
 
     public static ILAW getIlaw() {
