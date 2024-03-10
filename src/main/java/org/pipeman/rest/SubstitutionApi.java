@@ -4,9 +4,13 @@ import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Context;
 import io.javalin.http.Header;
 import io.javalin.http.NotFoundResponse;
+import org.pipeman.Config;
+import org.pipeman.Database;
+import org.pipeman.ilaw.ILAW;
+import org.pipeman.ilaw.LoginException;
 import org.pipeman.substitution_plan.*;
 
-import org.pipeman.ilaw.LoginException;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -19,6 +23,60 @@ public class SubstitutionApi {
 
     public static void getPlanTomorrow(Context ctx) {
         sendPlan(ctx, Day.TOMORROW);
+    }
+
+    public static void addAccount(Context ctx) {
+        long accountId = LoginApi.getUser(ctx).id();
+
+        String username = ctx.queryParamAsClass("username", String.class).get();
+        String password = ctx.queryParamAsClass("password", String.class).get();
+        int todayPlanId = ctx.queryParamAsClass("todayPlanId", Integer.class).get();
+        int tomorrowPlanId = ctx.queryParamAsClass("tomorrowPlanId", Integer.class).get();
+
+        try {
+            ILAW ilaw = ILAW.login(Config.get().ilUrl, username, password);
+            ilaw.downloadOnedriveFile(String.valueOf(todayPlanId));
+            ilaw.downloadOnedriveFile(String.valueOf(tomorrowPlanId));
+        } catch (LoginException e) {
+            throw new BadRequestResponse("Invalid credentials");
+        } catch (RuntimeException e) {
+            throw new BadRequestResponse("Invalid plan ids");
+        }
+
+        Database.getJdbi().useHandle(h -> h.createUpdate("""
+                        INSERT INTO substitution_accounts (username, password, today_plan_id, tomorrow_plan_id, class, added_by)
+                        VALUES (:username, :password, :today_plan_id, :tomorrow_plan_id, :class, :added_by)
+                        ON CONFLICT ON CONSTRAINT substitution_accounts_pk DO UPDATE SET username         = :username,
+                                                                                         password         = :password,
+                                                                                         today_plan_id    = :today_plan_id,
+                                                                                         tomorrow_plan_id = :tomorrow_plan_id,
+                                                                                         class            = :class,
+                                                                                         added_by         = :added_by
+                        """)
+                .bind("username", username)
+                .bind("password", password)
+                .bind("today_plan_id", todayPlanId)
+                .bind("tomorrow_plan_id", tomorrowPlanId)
+                .bind("class", ctx.pathParam("class"))
+                .bind("added_by", accountId)
+                .execute());
+    }
+
+    public static void removeAccount(Context ctx) {
+        long accountId = LoginApi.getUser(ctx).id();
+        String substitutionClass = ctx.pathParam("class");
+
+        Database.getJdbi().useHandle(h -> h.createUpdate("""
+                        DELETE
+                        FROM substitution_accounts
+                        WHERE added_by = :added_by
+                          AND class = :class
+                        """)
+                .bind("class", substitutionClass)
+                .bind("added_by", accountId)
+                .execute());
+
+        CACHE.removeAccount(substitutionClass);
     }
 
     private static void sendForYou(Context ctx, Day day) throws LoginException {
@@ -61,6 +119,20 @@ public class SubstitutionApi {
         } catch (LoginException e) {
             throw new BadRequestResponse("Invalid itslearning credentials");
         }
+    }
+
+    public static void getPlans(Context ctx) {
+        long userId = LoginApi.getUser(ctx).id();
+
+        List<Map<String, Object>> plans = Database.getJdbi().withHandle(h -> h.createQuery("""
+                        SELECT class, added_by = :user AS removable
+                        FROM substitution_accounts
+                        """)
+                .bind("user", userId)
+                .mapToMap()
+                .list());
+
+        ctx.json(plans);
     }
 
     private enum Format {

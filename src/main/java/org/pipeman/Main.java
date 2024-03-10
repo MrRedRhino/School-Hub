@@ -61,9 +61,15 @@ public class Main {
                         delete(SubscriptionApi::removeSubscription);
                     });
 
-                    path("plans/{class}", () -> {
-                        get("today", SubstitutionApi::getPlanToday);
-                        get("tomorrow", SubstitutionApi::getPlanTomorrow);
+                    path("plans", () -> {
+                        get(SubstitutionApi::getPlans);
+
+                        path("{class}", () -> {
+                            put(SubstitutionApi::addAccount);
+                            delete(SubstitutionApi::removeAccount);
+                            get("today", SubstitutionApi::getPlanToday);
+                            get("tomorrow", SubstitutionApi::getPlanTomorrow);
+                        });
                     });
 
                     path("books", () -> {

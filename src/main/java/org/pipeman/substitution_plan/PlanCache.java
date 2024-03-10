@@ -18,9 +18,9 @@ public class PlanCache {
     private static final Logger LOGGER = LoggerFactory.getLogger(PlanCache.class);
     private final Map<PlanIdentifier, byte[]> hashes = new HashMap<>();
 
-    private final LoadingCache<PlanIdentifier, Optional<PlanAccount>> userCache = Caffeine.newBuilder()
+    private final LoadingCache<String, Optional<PlanAccount>> userCache = Caffeine.newBuilder()
             .maximumSize(10)
-            .evictionListener((PlanIdentifier key, Optional<PlanAccount> value, RemovalCause cause) -> value.ifPresent(account -> account.ilaw.close()))
+            .evictionListener((String key, Optional<PlanAccount> value, RemovalCause cause) -> value.ifPresent(account -> account.ilaw.close()))
             .build(this::getAccount);
 
     private final LoadingCache<PlanIdentifier, Plan> cache = Caffeine.newBuilder()
@@ -49,13 +49,17 @@ public class PlanCache {
         new Timer(true).schedule(task, interval, interval);
     }
 
-    private Optional<PlanAccount> getAccount(PlanIdentifier identifier) {
+    public void removeAccount(String clazz) {
+        userCache.invalidate(clazz);
+    }
+
+    private Optional<PlanAccount> getAccount(String clazz) {
         return Database.getJdbi().withHandle(h -> h.createQuery("""
                         SELECT username, password, today_plan_id, tomorrow_plan_id
                         FROM substitution_accounts
                         WHERE class = :class
                         """)
-                .bind("class", identifier.clazz())
+                .bind("class", clazz)
                 .mapTo(PlanAccount.class)
                 .findFirst());
     }
@@ -63,7 +67,7 @@ public class PlanCache {
     public Plan downloadPlan(PlanIdentifier identifier, boolean addToStaleCache) {
         long start = System.nanoTime();
 
-        Optional<PlanAccount> optionalAccount = userCache.get(identifier);
+        Optional<PlanAccount> optionalAccount = userCache.get(identifier.clazz());
         if (optionalAccount.isEmpty()) return null;
 
         PlanAccount account = optionalAccount.get();
