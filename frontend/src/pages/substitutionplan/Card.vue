@@ -5,7 +5,7 @@ const {day} = defineProps(["day"]);
 const data = ref(null);
 const error = ref(false);
 
-fetch(`/api/plans/${day}?format=json`)
+fetch(`/api/plans/Q12/${day}?format=json`)
     .then(r => r.json().then(json => data.value = json))
     .catch(() => error.value = true);
 </script>

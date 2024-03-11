@@ -8,7 +8,7 @@ const expanded = ref(false);
 const content = ref();
 const messageElement = ref();
 
-fetch(`/api/plans/for-you/${day}`).then(r => r.json().then(json => {
+fetch(`/api/plans/Q12/${day}?format=for-you`).then(r => r.json().then(json => {
   content.value = json;
   emit("date", json["date"]);
 }));
