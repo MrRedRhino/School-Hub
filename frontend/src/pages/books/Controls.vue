@@ -1,13 +1,10 @@
 <script setup>
 
-import {getCurrentInstance, nextTick, ref} from "vue";
-import {openPopup} from "@/popup.js";
-import SummaryPopup from "@/components/SummaryPopup.vue";
+import {getCurrentInstance, ref} from "vue";
 import {requireAuth} from "@/auth.js";
-import RequireAuthPopup from "@/components/RequireAuthPopup.vue";
 
 const {book, page, zoom} = defineProps(["book", "page", "zoom"]);
-const emit = defineEmits(["set-page", "change-zoom", "change-page", "change-pencil"]);
+const emit = defineEmits(["set-page", "change-zoom", "change-page", "change-pencil", "open-summary"]);
 const activePencil = ref(null);
 const {appContext} = getCurrentInstance();
 
@@ -66,7 +63,7 @@ function changeEraser() {
 }
 
 function openSummary() {
-  openPopup(SummaryPopup, appContext, {page: page, book: book["id"]});
+  emit("open-summary");
 }
 </script>
 

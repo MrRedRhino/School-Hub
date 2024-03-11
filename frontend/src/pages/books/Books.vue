@@ -1,6 +1,8 @@
 <script setup>
-import {computed, nextTick, onUnmounted, ref} from "vue";
+import {computed, getCurrentInstance, nextTick, onUnmounted, ref} from "vue";
 import Controls from "@/pages/books/Controls.vue";
+import {openPopup} from "@/popup.js";
+import SummaryPopup from "@/components/SummaryPopup.vue";
 
 const htmlHolder = ref();
 const bookDisplay = ref();
@@ -27,6 +29,7 @@ let fadeoutTimeoutId = null;
 const showControls = ref(true);
 const searchResults = ref();
 const showResults = ref(false);
+const {appContext} = getCurrentInstance();
 
 function refreshControlsFadeout() {
   showControls.value = true;
@@ -316,6 +319,10 @@ function keyDown(event) {
   }
 }
 
+function openSummary() {
+  openPopup(SummaryPopup, appContext, {page: currentPage.value, book: currentBook.value["id"]});
+}
+
 async function loadBookFromUrl() {
   const params = new URL(location.href).searchParams;
   if (params.has("book")) {
@@ -381,7 +388,7 @@ onUnmounted(() => {
     </div>
   </div>
   <div v-if="currentBook" class="center" :style="{opacity: showControls ? 1 : 0, 'pointer-events': showControls ? 'all' : 'none'}">
-    <Controls @change-page="changePage" @set-page="setPage" @change-zoom="changeZoom" @change-pencil="setPencil"
+    <Controls @change-page="changePage" @set-page="setPage" @change-zoom="changeZoom" @change-pencil="setPencil" @open-summary="openSummary"
               :book="currentBook"
               :page="currentPage"
               :zoom="zoomString">
