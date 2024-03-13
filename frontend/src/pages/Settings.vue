@@ -1,6 +1,6 @@
 <script setup>
 import Toggle from "@/components/Toggle.vue";
-import {account, openLoginPage, settings, theme} from "@/auth.js";
+import {account, openLoginPage, saveSettings, settings, theme} from "@/auth.js";
 import {computed, ref} from "vue";
 import {disableNotifications, enableNotifications, loadNotifications} from "@/notifications.js";
 import {deepCompare} from "../main.js";
@@ -38,17 +38,12 @@ async function toggleNotifications(enabled) {
 async function save() {
   saveDisabled.value = true;
 
-  await fetch("/api/account/settings", {
-    method: "PATCH",
-    body: JSON.stringify(settings)
-  });
-  Object.assign(account.value.settings, settings);
-
   await fetch("/api/account/course-filter", {
     method: "PATCH",
     body: courseFilter.value
   });
   account.value["course-filter"] = courseFilter.value;
+  await saveSettings();
 
   saveDisabled.value = false;
 }

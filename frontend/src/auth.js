@@ -46,6 +46,14 @@ export function openLoginPage() {
     window.open("/login", "_blank");
 }
 
+export async function saveSettings() {
+    await fetch("/api/account/settings", {
+        method: "PATCH",
+        body: JSON.stringify(settings)
+    });
+    Object.assign(account.value.settings, settings);
+}
+
 window.onstorage = async e => {
     if (e.key === "auth-token") {
         await fetchAccount();

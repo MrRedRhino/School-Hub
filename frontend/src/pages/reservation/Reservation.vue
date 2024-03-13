@@ -258,7 +258,7 @@ let eventSource;
 let reconnect = null;
 
 function connect() {
-  eventSource = new EventSource("http://localhost:4000/api/reservations/live");
+  eventSource = new EventSource("/api/reservations/live");
 
   eventSource.addEventListener("set_reservations", event => {
     const newSeats = {};
@@ -290,28 +290,102 @@ connect();
 
 function reserveSeat(seat) {
   requireAuth("einen Platz zu reservieren", appContext, () => {
-    openPopup(SeatPopup, appContext, {"seat-id": seat, reservations: reservations, "max-seats-reached": maxSeatsReached});
+    openPopup(SeatPopup, appContext, {
+      "seat-id": seat,
+      reservations: reservations,
+      "max-seats-reached": maxSeatsReached
+    });
   });
 }
 
 function getColor(reservation) {
-  switch (reservation) {
-    case account.value.name:
-      return "#ff2046"
-    case undefined:
-      return "#00bf4b"
-    default:
-      return "#B3B3B3";
+  if (account.value && reservation === account.value.name) {
+    return "#ff2046";
+  } else if (reservation === undefined) {
+    return "#00bf4b";
+  }
+  return "#B3B3B3";
+}
+
+// Global vars to cache event state
+const scale = ref(1);
+const evCache = [];
+let prevDiff = -1;
+const zooming = ref(false);
+
+function pointerdown_handler(ev) {
+  evCache.push(ev);
+  zooming.value = evCache.length > 1;
+}
+
+function pointermove_handler(ev) {
+  // This function implements a 2-pointer horizontal pinch/zoom gesture.
+  //
+  // If the distance between the two pointers has increased (zoom in),
+  // the taget element's background is changed to "pink" and if the
+  // distance is decreasing (zoom out), the color is changed to "lightblue".
+  //
+  // This function sets the target element's border to "dashed" to visually
+  // indicate the pointer's target received a move event.
+
+  // Find this event in the cache and update its record with this event
+  for (let i = 0; i < evCache.length; i++) {
+    if (ev.pointerId === evCache[i].pointerId) {
+      evCache[i] = ev;
+      break;
+    }
+  }
+
+  if (evCache.length === 2) {
+    // Calculate the distance between the two pointers
+    const curDiff = Math.sqrt(Math.pow(evCache[1].clientX - evCache[0].clientX, 2) + Math.pow(evCache[1].clientY - evCache[0].clientY, 2));
+
+    if (prevDiff > 0) {
+      scale.value *= curDiff / prevDiff;
+    }
+
+    // Cache the distance for the next move event
+    prevDiff = curDiff;
+  }
+}
+
+function pointerup_handler(ev) {
+  // Remove this pointer from the cache and reset the target's
+  // background and border
+  remove_event(ev);
+
+  // If the number of pointers down is less than two then reset diff tracker
+  if (evCache.length < 2) {
+    prevDiff = -1;
+  }
+  zooming.value = evCache.length > 1;
+}
+
+function remove_event(ev) {
+  // Remove this event from the target's cache
+  for (let i = 0; i < evCache.length; i++) {
+    if (evCache[i].pointerId === ev.pointerId) {
+      evCache.splice(i, 1);
+      break;
+    }
   }
 }
 </script>
 
 <template>
-  <div class="plan">
-    <div v-for="seat in seats"
-         class="seat"
-         :style="{transform: `translate(${seat.x}px, ${seat.y}px) rotate(${seat.angle + 'deg'})`, background: getColor(reservations[seat.id])}"
-         @click="reserveSeat(seat.id)">
+  <div id="plan-wrapper"
+       @pointerdown="pointerdown_handler"
+       @pointermove="pointermove_handler"
+       @pointerup="pointerup_handler"
+       @pointerout="pointerup_handler"
+       @pointerleave="pointerup_handler"
+  >
+    <div class="plan" :style="{scale: scale, 'touch-action': zooming ? 'none' : 'pan-x pan-y'}">
+      <div v-for="seat in seats"
+           class="seat"
+           :style="{transform: `translate(${seat.x}px, ${seat.y}px) rotate(${seat.angle + 'deg'})`, background: getColor(reservations[seat.id])}"
+           @click="reserveSeat(seat.id)">
+      </div>
     </div>
   </div>
 </template>
@@ -326,7 +400,13 @@ function getColor(reservation) {
   cursor: pointer;
 }
 
+#plan-wrapper {
+  height: 400px;
+  width: 400px;
+  overflow: scroll;
+}
+
 .plan {
-  transform: translate(700px, 600px);
+  position: relative;
 }
 </style>

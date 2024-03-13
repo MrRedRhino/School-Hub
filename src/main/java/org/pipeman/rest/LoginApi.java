@@ -133,7 +133,8 @@ public class LoginApi {
 
             Map<String, Class<?>> settings = Map.of(
                     "substitution-html-view", Boolean.class,
-                    "theme", String.class
+                    "theme", String.class,
+                    "news-last-read", String.class
             );
             if (!settings.keySet().containsAll(body.keySet())) {
                 throw new BadRequestResponse("Unknown setting");

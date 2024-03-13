@@ -102,6 +102,8 @@ public class Main {
                         put("{seat}", ReservationApi::reserveSeat);
                         delete("{seat}", ReservationApi::removeReservation);
                     });
+
+                    get("news", News::getNews);
                 });
             });
         }).start();
