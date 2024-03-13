@@ -44,7 +44,7 @@ public class TodoApi {
                         WHERE user_id = :user_id
                           AND date_done IS NOT NULL
                           AND date_done > current_date - INTERVAL '5 days'
-                        ORDER BY date_done;
+                        ORDER BY date_done DESC;
                         """)
                 .bind("user_id", userId)
                 .mapTo(Todo.class)
