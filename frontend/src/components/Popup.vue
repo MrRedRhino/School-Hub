@@ -2,7 +2,7 @@
 
 import {closePopup} from "@/popup.js";
 
-defineProps(["title"])
+defineProps(["title"]);
 </script>
 
 <template>
