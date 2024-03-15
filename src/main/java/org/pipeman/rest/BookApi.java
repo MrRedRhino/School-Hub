@@ -23,6 +23,7 @@ public class BookApi {
         int book = ctx.pathParamAsClass("book", Integer.class).get();
         try {
             ctx.json(BookIndex.INSTANCE.books().get(book).serialize());
+            storeBookStat(book);
             return;
         } catch (Exception ignored) {
         }
@@ -111,5 +112,15 @@ public class BookApi {
                 .findFirst());
 
         ctx.contentType(ContentType.APPLICATION_JSON).result(annotations.orElse("[]"));
+    }
+
+    private static void storeBookStat(int bookId) {
+        Database.getJdbi().useHandle(h -> h.createUpdate("""
+                        INSERT INTO books_stats
+                        VALUES (:book_id, current_date, 1)
+                        ON CONFLICT ON CONSTRAINT books_stats_pk DO UPDATE SET count = books_stats.count + 1
+                        """)
+                .bind("book_id", bookId)
+                .execute());
     }
 }
