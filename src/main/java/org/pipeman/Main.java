@@ -5,12 +5,10 @@ import de.mkammerer.snowflakeid.SnowflakeIdGenerator;
 import io.javalin.Javalin;
 import io.javalin.community.ssl.SslPlugin;
 import io.javalin.json.JavalinJackson;
-import org.pipeman.ilaw.ILAW;
 import org.pipeman.rest.*;
 import org.pipeman.rest.reservation.ReservationApi;
 import org.pipeman.substitution_plan.PdfDataSerializer;
 import org.pipeman.substitution_plan.PlanData;
-import org.pipeman.utils.LazyInitializer;
 
 import java.time.LocalDate;
 
@@ -18,7 +16,6 @@ import static io.javalin.apibuilder.ApiBuilder.*;
 
 public class Main {
     public static final SnowflakeIdGenerator ID_GENERATOR = SnowflakeIdGenerator.createDefault(1);
-    private static final LazyInitializer<ILAW> ilaw = new LazyInitializer<>(Main::ilawLogin);
 
     public static void main(String[] args) {
         SslPlugin sslPlugin = new SslPlugin(sslConfig -> {
@@ -111,14 +108,5 @@ public class Main {
         SimpleModule module = new SimpleModule();
         module.addSerializer(PlanData.class, new PdfDataSerializer());
         JavalinJackson.Companion.defaultMapper().registerModule(module);
-    }
-
-    private static ILAW ilawLogin() {
-        Config config = Config.get();
-        return ILAW.login(config.ilUrl, config.ilUser, config.ilPassword);
-    }
-
-    public static ILAW getIlaw() {
-        return ilaw.get();
     }
 }

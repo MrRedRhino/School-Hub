@@ -11,6 +11,7 @@ import org.json.JSONObject;
 import org.pipeman.Config;
 import org.pipeman.Database;
 import org.pipeman.Main;
+import org.pipeman.ilaw.ILAW;
 import org.pipeman.ilaw.Recipient;
 import org.pipeman.utils.Utils;
 
@@ -18,6 +19,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class LoginApi {
+    private static final ILAW ilaw = ILAW.login(Config.get().ilUrl, Config.get().ilUser, Config.get().ilPassword);
     private static final Random RANDOM = new Random();
     private static final Cache<Integer, Recipient> loginCodes = Caffeine.newBuilder()
             .expireAfterWrite(5, TimeUnit.MINUTES)
@@ -29,7 +31,7 @@ public class LoginApi {
             throw new BadRequestResponse("Illegal name");
         }
 
-        List<Recipient> recipients = Main.getIlaw().getMessageRecipients(username.replace(".", " "));
+        List<Recipient> recipients = ilaw.getMessageRecipients(username.replace(".", " "));
 
         if (recipients.size() != 1) {
             throw new BadRequestResponse("Illegal name");
@@ -38,7 +40,7 @@ public class LoginApi {
 
         int code = generateCode();
         loginCodes.put(code, recipient);
-        Main.getIlaw().sendMessage(recipient.id(), "Dein Code für pipeman.org ist: %s. Falls Du nicht gerade versucht hast, Dich anzumelden, kannst Du diese Nachricht ignorieren. \nDies ist eine automatisch versendete Nachricht.".formatted(code));
+        ilaw.sendMessage(recipient.id(), "Dein Code für pipeman.org ist: %s. Falls Du nicht gerade versucht hast, Dich anzumelden, kannst Du diese Nachricht ignorieren. \nDies ist eine automatisch versendete Nachricht.".formatted(code));
     }
 
     public static void login(Context ctx) {
