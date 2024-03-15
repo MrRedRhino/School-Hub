@@ -6,9 +6,7 @@ export const account = ref(null);
 export const settings = reactive({});
 export const theme = computed({
     get: () => {
-        const value = settings.theme || "dark";
-        document.body.setAttribute("data-theme", value);
-        return value;
+        return settings.theme || "dark";
     },
     set: value => {
         document.body.setAttribute("data-theme", value);
@@ -18,6 +16,8 @@ export const theme = computed({
 
 watch(account, value => {
     Object.assign(settings, value["settings"]);
+    const theme = settings.theme || "dark";
+    document.body.setAttribute("data-theme", theme);
 });
 
 export function fetchAccount() {
