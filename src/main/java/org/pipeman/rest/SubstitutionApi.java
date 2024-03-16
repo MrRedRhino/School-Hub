@@ -45,9 +45,10 @@ public class SubstitutionApi {
 
         Database.getJdbi().useHandle(h -> h.createUpdate("""
                         INSERT INTO substitution_accounts (username, password, today_plan_id, tomorrow_plan_id, class, added_by)
-                        VALUES (:username, :password, :today_plan_id, :tomorrow_plan_id, :class, :added_by)
+                        VALUES (:username, pgp_sym_encrypt(:password, :encryption_password), :today_plan_id, :tomorrow_plan_id, :class,
+                                :added_by)
                         ON CONFLICT ON CONSTRAINT substitution_accounts_pk DO UPDATE SET username         = :username,
-                                                                                         password         = :password,
+                                                                                         password         = pgp_sym_encrypt(:password, :encryption_password),
                                                                                          today_plan_id    = :today_plan_id,
                                                                                          tomorrow_plan_id = :tomorrow_plan_id,
                                                                                          class            = :class,
@@ -59,6 +60,7 @@ public class SubstitutionApi {
                 .bind("tomorrow_plan_id", tomorrowPlanId)
                 .bind("class", ctx.pathParam("class"))
                 .bind("added_by", accountId)
+                .bind("encryption_password", Config.get().encryptionPassword)
                 .execute());
     }
 

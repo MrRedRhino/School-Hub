@@ -55,11 +55,12 @@ public class PlanCache {
 
     private Optional<PlanAccount> getAccount(String clazz) {
         return Database.getJdbi().withHandle(h -> h.createQuery("""
-                        SELECT username, password, today_plan_id, tomorrow_plan_id
+                        SELECT username, pgp_sym_decrypt(password, :encryption_password) AS password, today_plan_id, tomorrow_plan_id
                         FROM substitution_accounts
                         WHERE class = :class
                         """)
                 .bind("class", clazz)
+                .bind("encryption_password", Config.get().encryptionPassword)
                 .mapTo(PlanAccount.class)
                 .findFirst());
     }

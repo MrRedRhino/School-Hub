@@ -1,6 +1,7 @@
 package org.pipeman;
 
 import org.pipeman.pconf.AbstractConfig;
+import org.pipeman.utils.Utils;
 
 import java.nio.file.Path;
 
@@ -22,6 +23,7 @@ public class Config extends AbstractConfig {
     public final int adminPassword = this.get("admin-password", 42069);
     public final String adminUsername = this.get("admin-username", "");
     public final int maxSeatsPerPerson = this.get("max-seats-per-person", 5);
+    public final String encryptionPassword = this.get("encryption-password", Utils.generateRandomString(32));
 
     public Config(String file) {
         super(file);
