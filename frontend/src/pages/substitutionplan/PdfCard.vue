@@ -1,14 +1,24 @@
 <script setup>
-import {ref} from "vue";
+import {computed, ref, watch} from "vue";
 
-const {day} = defineProps(["day"]);
-
+const props = defineProps(["day", "clazz"]);
+const clazzRef = computed(() => props.clazz);
 const data = ref("");
 const error = ref(false);
 
-fetch(`/api/plans/Q12/${day}?format=html`)
-    .then(r => r.text().then(text => data.value = text))
-    .catch(() => error.value = true);
+function loadPlan() {
+  error.value = false;
+  data.value = "";
+  fetch(`/api/plans/${encodeURIComponent(props.clazz)}/${props.day}?format=html`)
+      .then(r => r.text().then(text => data.value = text))
+      .catch(() => error.value = true);
+}
+
+watch(clazzRef, () => {
+  loadPlan();
+});
+
+loadPlan();
 </script>
 
 <template>

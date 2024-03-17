@@ -28,6 +28,7 @@ public class SubstitutionApi {
     public static void addAccount(Context ctx) {
         long accountId = LoginApi.getUser(ctx).id();
 
+        String clazz = ctx.pathParam("class");
         String username = ctx.queryParamAsClass("username", String.class).get();
         String password = ctx.queryParamAsClass("password", String.class).get();
         int todayPlanId = ctx.queryParamAsClass("todayPlanId", Integer.class).get();
@@ -58,7 +59,7 @@ public class SubstitutionApi {
                 .bind("password", password)
                 .bind("today_plan_id", todayPlanId)
                 .bind("tomorrow_plan_id", tomorrowPlanId)
-                .bind("class", ctx.pathParam("class"))
+                .bind("class", clazz)
                 .bind("added_by", accountId)
                 .bind("encryption_password", Config.get().encryptionPassword)
                 .execute());
