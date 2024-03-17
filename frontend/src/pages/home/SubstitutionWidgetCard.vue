@@ -1,14 +1,16 @@
 <script setup>
 import {ref} from "vue";
+import {account, settings} from "@/auth.js";
 
 const {day} = defineProps(["day"]);
 const emit = defineEmits(["date"]);
 
+const clazz = account.value ? settings["class"] : localStorage.getItem("substitution-class");
 const expanded = ref(false);
 const content = ref();
 const messageElement = ref();
 
-fetch(`/api/plans/Q12/${day}?format=for-you`).then(r => r.json().then(json => {
+fetch(`/api/plans/${encodeURIComponent(clazz)}/${day}?format=for-you`).then(r => r.json().then(json => {
   content.value = json;
   emit("date", json["date"]);
 }));
