@@ -5,7 +5,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import org.jdbi.v3.core.Jdbi;
 import org.jdbi.v3.core.mapper.reflect.ConstructorMapper;
 import org.jdbi.v3.jackson2.Jackson2Plugin;
-import org.pipeman.rest.News;
+import org.pipeman.rest.NewsApi;
 import org.pipeman.rest.SupervisionApi;
 import org.pipeman.rest.TodoApi;
 import org.pipeman.rest.User;
@@ -29,7 +29,7 @@ public class Database {
         JDBI.registerRowMapper(ConstructorMapper.factory(SupervisionApi.Supervision.class));
         JDBI.registerRowMapper(ConstructorMapper.factory(Live.Reservation.class));
         JDBI.registerRowMapper(ConstructorMapper.factory(PlanCache.PlanAccount.class));
-        JDBI.registerRowMapper(ConstructorMapper.factory(News.NewsData.class));
+        JDBI.registerRowMapper(ConstructorMapper.factory(NewsApi.NewsData.class));
         JDBI.installPlugin(new Jackson2Plugin());
     }
 

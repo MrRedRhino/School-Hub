@@ -10,7 +10,7 @@ import java.beans.ConstructorProperties;
 import java.util.List;
 import java.util.Map;
 
-public class News {
+public class NewsApi {
     public static void getNews(Context ctx) {
         long lastRead = ctx.queryParamAsClass("last-read", Long.class).getOrDefault(0L);
 //        long lastRead = 0;

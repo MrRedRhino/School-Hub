@@ -100,7 +100,7 @@ public class Main {
                         delete("{seat}", ReservationApi::removeReservation);
                     });
 
-                    get("news", News::getNews);
+                    get("news", NewsApi::getNews);
                 });
             });
         }).start();
