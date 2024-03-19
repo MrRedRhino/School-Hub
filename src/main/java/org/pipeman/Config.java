@@ -24,6 +24,8 @@ public class Config extends AbstractConfig {
     public final String adminUsername = this.get("admin-username", "");
     public final int maxSeatsPerPerson = this.get("max-seats-per-person", 5);
     public final String encryptionPassword = this.get("encryption-password", Utils.generateRandomString(32));
+    public final String googleBucket = this.get("google-bucket", "");
+    public final Path googleCredentialFile = this.get("google-credential-file", Path.of("google-credentials.json"));
 
     public Config(String file) {
         super(file);
