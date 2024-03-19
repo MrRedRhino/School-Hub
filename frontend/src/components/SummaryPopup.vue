@@ -18,7 +18,7 @@ fetch(`/api/books/${book}/${page}/summary`).then(r => r.text().then(text => {
 
 <style scoped>
  h2 {
-   background: black;
+   background: var(--background);
    color: var(--text);
    border-radius: 10px;
    padding: 7px;
