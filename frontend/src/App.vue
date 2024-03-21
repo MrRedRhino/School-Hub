@@ -7,14 +7,14 @@ import {account, saveSettings, settings} from "@/auth.js";
 
 const {appContext} = getCurrentInstance();
 
-const lastRead = (account ? settings["news-last-read"] : localStorage.getItem("last-read")) || 0;
+const lastRead = (account.value ? settings["news-last-read"] : localStorage.getItem("last-read")) || 0;
 fetch(`/api/news?last-read=${lastRead}`).then(res => res.json()).then(data => {
   if (data.length <= 0) return;
 
   openPopup(NewsPopup, appContext, {data: data[0]["content"]});
 
   const publishedDate = data[0]["datePublished"];
-  if (account) {
+  if (account.value) {
     settings["news-last-read"] = publishedDate;
     saveSettings();
   } else {
