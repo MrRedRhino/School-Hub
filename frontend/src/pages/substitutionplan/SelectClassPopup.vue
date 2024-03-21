@@ -16,7 +16,7 @@ import {closePopup} from "@/popup.js";
 
 <style scoped>
 div {
-  height: 80vh;
+  max-height: 80vh;
   overflow: scroll;
 }
 </style>
