@@ -10,10 +10,11 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 public class AnnotatedHandler implements Handler {
-    private final List<Function<Context, ?>> arguments = new ArrayList<>();
+    private final List<BiFunction<Context, JSONObject, ?>> arguments = new ArrayList<>();
+    private boolean needsJsonBody;
     private final Method method;
 
     public AnnotatedHandler(Class<?> clazz, String methodName) {
@@ -34,25 +35,31 @@ public class AnnotatedHandler implements Handler {
 
             QueryParam queryParam = parameter.getAnnotation(QueryParam.class);
             if (queryParam != null) {
-                arguments.add(context -> context.queryParamAsClass(queryParam.value(), parameter.getType()).get());
+                arguments.add((context, json) -> context.queryParamAsClass(queryParam.value(), parameter.getType()).get());
                 continue;
             }
 
             PathParam pathParam = parameter.getAnnotation(PathParam.class);
             if (pathParam != null) {
-                arguments.add(context -> context.pathParamAsClass(pathParam.value(), parameter.getType()).get());
+                arguments.add((context, json) -> context.pathParamAsClass(pathParam.value(), parameter.getType()).get());
                 continue;
             }
 
             BodyParam bodyParam = parameter.getAnnotation(BodyParam.class);
             if (bodyParam != null) {
-                arguments.add(context -> {
-                    JSONObject body = new JSONObject(context.body());
-                    Object value = body.opt(bodyParam.value());
+                arguments.add((context, json) -> {
+                    Object value = json.opt(bodyParam.value());
                     return context.appData(Validation.ValidationKey)
                             .validator(bodyParam.value(), parameter.getType(), value == null ? null : String.valueOf(value))
                             .get();
                 });
+                needsJsonBody = true;
+                continue;
+            }
+
+            Body body = parameter.getAnnotation(Body.class);
+            if (body != null) {
+                arguments.add((context, json) -> context.bodyAsClass(parameter.getType()));
             }
         }
     }
@@ -71,10 +78,13 @@ public class AnnotatedHandler implements Handler {
         if (arguments.isEmpty()) {
             method.invoke(null, context);
         } else {
+            JSONObject json = needsJsonBody
+                    ? context.appData(Validation.ValidationKey).validator("body", JSONObject.class, context.body()).get()
+                    : null;
             Object[] args = new Object[arguments.size() + 1];
             args[0] = context;
             for (int i = 0; i < arguments.size(); i++) {
-                args[i + 1] = arguments.get(i).apply(context);
+                args[i + 1] = arguments.get(i).apply(context, json);
             }
             method.invoke(null, args);
         }
