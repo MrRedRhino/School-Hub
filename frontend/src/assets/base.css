@@ -27,6 +27,11 @@ body[data-theme="hub"] {
     box-sizing: border-box;
 }
 
+@font-face {
+    font-family: "JetBrains Mono";
+    src: url("@/assets/JetBrainsMono-Regular.woff2");
+}
+
 body {
     margin: 0;
     background: var(--background);

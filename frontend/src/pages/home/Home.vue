@@ -1,12 +1,14 @@
 <script setup>
 import SubstitutionWidget from "@/pages/home/SubstitutionWidget.vue";
 import TodoWidget from "@/pages/home/TodoWidget.vue";
+import CountdownWidget from "@/pages/home/CountdownWidget.vue";
 </script>
 
 <template>
   <div class="widgets">
     <TodoWidget></TodoWidget>
     <SubstitutionWidget></SubstitutionWidget>
+    <CountdownWidget></CountdownWidget>
   </div>
 </template>
 
