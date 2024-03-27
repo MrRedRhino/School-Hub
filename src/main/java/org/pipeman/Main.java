@@ -5,10 +5,12 @@ import de.mkammerer.snowflakeid.SnowflakeIdGenerator;
 import io.javalin.Javalin;
 import io.javalin.community.ssl.SslPlugin;
 import io.javalin.json.JavalinJackson;
+import org.json.JSONObject;
 import org.pipeman.rest.*;
 import org.pipeman.rest.reservation.ReservationApi;
 import org.pipeman.substitution_plan.PdfDataSerializer;
 import org.pipeman.substitution_plan.PlanData;
+import org.pipeman.utils.handler.AnnotatedHandler;
 
 import java.time.LocalDate;
 
@@ -33,6 +35,7 @@ public class Main {
                 int day = Integer.parseInt(split[2]);
                 return LocalDate.of(year, month, day);
             });
+            config.validation.register(JSONObject.class, JSONObject::new);
 
             config.showJavalinBanner = false;
 
@@ -101,6 +104,11 @@ public class Main {
                     });
 
                     get("news", NewsApi::getNews);
+
+                    path("resources", () -> {
+                        get(ResourcesApi::getResources);
+                        put(new AnnotatedHandler(ResourcesApi.class, "putResource"));
+                    });
                 });
             });
         }).start();

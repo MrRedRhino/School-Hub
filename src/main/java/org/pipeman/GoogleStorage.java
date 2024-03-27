@@ -3,13 +3,12 @@ package org.pipeman;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.google.auth.oauth2.ServiceAccountCredentials;
-import com.google.cloud.storage.BlobInfo;
-import com.google.cloud.storage.HttpMethod;
-import com.google.cloud.storage.Storage;
-import com.google.cloud.storage.StorageOptions;
+import com.google.cloud.storage.*;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class GoogleStorage {
@@ -36,6 +35,16 @@ public class GoogleStorage {
                         Storage.SignUrlOption.httpMethod(HttpMethod.PUT))
                 .toExternalForm();
         return new Upload(id, url);
+    }
+
+    public static boolean hasObjects(String... names) {
+        if (names.length == 0) return true;
+
+        List<BlobId> blobIds = new ArrayList<>();
+        for (String name : names) {
+            blobIds.add(BlobId.of(bucket, name));
+        }
+        return STORAGE.get(blobIds) != null;
     }
 
     public static boolean removeObject(long id) {

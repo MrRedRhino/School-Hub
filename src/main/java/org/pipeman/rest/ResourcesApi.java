@@ -2,9 +2,12 @@ package org.pipeman.rest;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
+import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Context;
 import org.pipeman.Database;
 import org.pipeman.GoogleStorage;
+import org.pipeman.Main;
+import org.pipeman.utils.handler.Body;
 
 import java.beans.ConstructorProperties;
 import java.time.DateTimeException;
@@ -101,8 +104,21 @@ public class ResourcesApi {
         return false;
     }
 
-    public static void putResource(Context ctx) {
-        
+    public static void putResource(Context ctx, @Body PutResourceBody body) {
+        if (!GoogleStorage.hasObjects(body.attachments())) {
+            throw new BadRequestResponse("Attachment does not exist");
+        }
+
+        Database.getJdbi().useHandle(h -> h.createUpdate("""
+                        INSERT INTO class_resources (title, description, attachments, classes, date_added, id)
+                        VALUES (:title, :description, :attachments::bigint[], :classes, current_date, :id)
+                        """)
+                .bind("title", body.title())
+                .bind("description", body.description())
+                .bind("attachments", body.attachments())
+                .bind("classes", body.classes())
+                .bind("id", Main.ID_GENERATOR.next())
+                .execute());
     }
 
     public static void deleteResource(Context ctx) {
@@ -173,5 +189,8 @@ public class ResourcesApi {
             }
             return attachmentUrls;
         }
+    }
+
+    public record PutResourceBody(String title, String description, String[] attachments, String[] classes) {
     }
 }
