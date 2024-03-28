@@ -224,6 +224,7 @@ async function pageChanged() {
 
   const annotations = await fetch(`/api/books/${currentBook.value["id"]}/${currentPage.value}/annotations`);
   loadAnnotations(await annotations.json());
+  refreshControlsFadeout();
 }
 
 function applyAutozoom() {
@@ -292,6 +293,7 @@ async function search(event) {
   const query = encodeURIComponent(event.target.value);
   const response = await fetch(`/api/books/search-completions?query=${query}`)
   searchResults.value = await response.json();
+  refreshControlsFadeout();
 }
 
 async function searchEnterPressed() {
