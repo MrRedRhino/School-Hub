@@ -7,9 +7,20 @@ const days = ref("0");
 const hours = ref("0");
 const minutes = ref("0");
 const seconds = ref("0");
+const ms = ref("0000");
 
 function padZeros(n) {
   if (n < 10) return "0" + n;
+  return n;
+}
+
+function padMsZeroes(n) {
+  if (n < 100) {
+    return "0" + n;
+  }
+  if (n < 10) {
+    return "00" + n;
+  }
   return n;
 }
 
@@ -21,9 +32,10 @@ function updateTime() {
   hours.value = padZeros(timeDifference.getHours() - 1);
   minutes.value = padZeros(timeDifference.getMinutes());
   seconds.value = padZeros(timeDifference.getSeconds());
+  ms.value = padMsZeroes(timeDifference.getMilliseconds());
 }
 
-setInterval(updateTime, 1000);
+setInterval(updateTime, 20);
 updateTime();
 </script>
 
@@ -47,6 +59,11 @@ updateTime();
     <div class="unit">
       <h1>{{ seconds }}</h1>
       <h2>SEC</h2>
+    </div>
+    <h1>:</h1>
+    <div class="unit">
+      <h1>{{ ms }}</h1>
+      <h2>MS</h2>
     </div>
   </div>
 </template>
