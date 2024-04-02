@@ -3,6 +3,7 @@ import {computed, getCurrentInstance, nextTick, onUnmounted, ref} from "vue";
 import Controls from "@/pages/books/Controls.vue";
 import {openPopup} from "@/popup.js";
 import SummaryPopup from "@/components/SummaryPopup.vue";
+import {activeElement, hoveredElement} from "@/utils.js";
 
 const htmlHolder = ref();
 const bookDisplay = ref();
@@ -25,21 +26,28 @@ let lines = [];
 let mouseDown = false;
 let start;
 let saveId = null;
+
 let fadeoutTimeoutId = null;
-const showControls = ref(true);
-const searchResults = ref();
+const controlsFadedIn = ref(true);
+const controlsVisible = computed(() => {
+  return controlsFadedIn.value || activeElement.value?.tagName === "INPUT" || !currentBook.value || controls.value.contains(hoveredElement.value);
+});
+const searchResults = ref([]);
+const query = ref("");
 const showResults = ref(false);
+const controls = ref();
+
 const {appContext} = getCurrentInstance();
 
 function refreshControlsFadeout() {
-  showControls.value = true;
+  controlsFadedIn.value = true;
   if (fadeoutTimeoutId !== null) {
     clearTimeout(fadeoutTimeoutId);
   }
 
   if (currentBook.value) {
     fadeoutTimeoutId = setTimeout(() => {
-      showControls.value = false;
+      controlsFadedIn.value = false;
     }, 5000);
   }
 }
@@ -289,11 +297,10 @@ async function changePage(delta) {
   await setPage(currentPage.value + delta);
 }
 
-async function search(event) {
-  const query = encodeURIComponent(event.target.value);
-  const response = await fetch(`/api/books/search-completions?query=${query}`)
+async function search() {
+  const encodedQuery = encodeURIComponent(query.value);
+  const response = await fetch(`/api/books/search-completions?query=${encodedQuery}`)
   searchResults.value = await response.json();
-  refreshControlsFadeout();
 }
 
 async function searchEnterPressed() {
@@ -351,8 +358,9 @@ onUnmounted(() => {
 
 <template>
   <div class="center" v-click-outside="hideResults">
-    <div class="search" :style="{opacity: showControls ? 1 : 0, 'pointer-events': showControls ? 'all' : 'none'}">
-      <input @input="search($event)"
+    <div class="search" :style="{opacity: controlsVisible ? 1 : 0, 'pointer-events': controlsVisible ? 'all' : 'none'}">
+      <input @input="search()"
+             v-model="query"
              @keydown.enter="searchEnterPressed"
              placeholder="Bücher suchen"
              @focusin="showResults = true">
@@ -363,6 +371,10 @@ onUnmounted(() => {
           <a class="subject">S. {{ result["page"] }}</a>
           <p class="subject">{{ result["book"]["subject"] }}</p>
         </li>
+        <!--        <li class="upload-suggestion" v-if="searchResults.length <= 2 && query !== ''">-->
+        <!--          <a class="name">Buch nicht gefunden?</a>-->
+        <!--          <p class="subject">Drücke hier, um es hochzuladen</p>-->
+        <!--        </li>-->
       </ul>
     </div>
   </div>
@@ -389,7 +401,8 @@ onUnmounted(() => {
       </div>
     </div>
   </div>
-  <div v-if="currentBook" class="center" :style="{opacity: showControls ? 1 : 0, 'pointer-events': showControls ? 'all' : 'none'}">
+  <div ref="controls" v-if="currentBook" class="center"
+       :style="{opacity: controlsVisible ? 1 : 0, 'pointer-events': controlsVisible ? 'all' : 'none'}">
     <Controls @change-page="changePage" @set-page="setPage" @change-zoom="changeZoom" @change-pencil="setPencil" @open-summary="openSummary"
               :book="currentBook"
               :page="currentPage"
@@ -442,6 +455,10 @@ onUnmounted(() => {
   padding-left: 10px;
 }
 
+.search .upload-suggestion {
+  color: var(--text-dark);
+}
+
 .search input {
   background: var(--background);
   border: none;
@@ -477,8 +494,8 @@ canvas:last-of-type {
   pointer-events: none;
 }
 
+/*noinspection CssUnusedSymbol*/
 .page-content {
-  /*width: fit-content;*/
   background: white;
 }
 
