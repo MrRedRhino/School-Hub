@@ -1,9 +1,8 @@
 package org.pipeman.rest;
 
-import io.javalin.http.ContentType;
-import io.javalin.http.Context;
-import io.javalin.http.NotFoundResponse;
-import io.javalin.http.TooManyRequestsResponse;
+import io.javalin.http.*;
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.pipeman.Config;
 import org.pipeman.Database;
 import org.pipeman.books.BookIndex;
@@ -81,17 +80,37 @@ public class BookApi {
         int page = ctx.pathParamAsClass("page", Integer.class).get();
 
         String content = ctx.body();
+        boolean delete;
+        try {
+            delete = new JSONArray(content).isEmpty();
+        } catch (JSONException ignored) {
+            throw new BadRequestResponse("Malformed body");
+        }
 
-        Database.getJdbi().useHandle(h -> h.createUpdate("""
-                        INSERT INTO annotations (user_id, book, page, content)
-                        VALUES (:user_id, :book, :page, CAST(:content AS jsonb))
-                        ON CONFLICT ON CONSTRAINT annotations_pk DO UPDATE SET content = CAST(:content AS jsonb)
-                        """)
-                .bind("book", book)
-                .bind("page", page)
-                .bind("user_id", userId)
-                .bind("content", content)
-                .execute());
+        if (delete) {
+            Database.getJdbi().useHandle(h -> h.createUpdate("""
+                            DELETE
+                            FROM annotations
+                            WHERE user_id = :user_id
+                              AND book = :book
+                              AND page = :page
+                            """)
+                    .bind("book", book)
+                    .bind("page", page)
+                    .bind("user_id", userId)
+                    .execute());
+        } else {
+            Database.getJdbi().useHandle(h -> h.createUpdate("""
+                            INSERT INTO annotations (user_id, book, page, content)
+                            VALUES (:user_id, :book, :page, CAST(:content AS jsonb))
+                            ON CONFLICT ON CONSTRAINT annotations_pk DO UPDATE SET content = CAST(:content AS jsonb)
+                            """)
+                    .bind("book", book)
+                    .bind("page", page)
+                    .bind("user_id", userId)
+                    .bind("content", content)
+                    .execute());
+        }
     }
 
     public static void getAnnotation(Context ctx) {
