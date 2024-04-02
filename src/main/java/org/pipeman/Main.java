@@ -39,8 +39,6 @@ public class Main {
 
             config.showJavalinBanner = false;
 
-//            config.bundledPlugins.enableCors(c -> c.addRule(CorsPluginConfig.CorsRule::anyHost));
-
             config.router.apiBuilder(() -> {
                 path("api", () -> {
                     path("login", () -> {

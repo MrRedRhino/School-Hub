@@ -4,6 +4,7 @@ import io.javalin.http.ContentType;
 import io.javalin.http.Context;
 import io.javalin.http.NotFoundResponse;
 import io.javalin.http.TooManyRequestsResponse;
+import org.pipeman.Config;
 import org.pipeman.Database;
 import org.pipeman.books.BookIndex;
 import org.pipeman.books.ai.AI;
@@ -115,6 +116,8 @@ public class BookApi {
     }
 
     private static void storeBookStat(int bookId) {
+        if (!Config.get().production) return;
+
         Database.getJdbi().useHandle(h -> h.createUpdate("""
                         INSERT INTO books_stats
                         VALUES (:book_id, current_date, 1)

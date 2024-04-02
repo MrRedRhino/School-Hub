@@ -26,6 +26,7 @@ public class Config extends AbstractConfig {
     public final String encryptionPassword = this.get("encryption-password", Utils.generateRandomString(32));
     public final String googleBucket = this.get("google-bucket", "");
     public final Path googleCredentialFile = this.get("google-credential-file", Path.of("google-credentials.json"));
+    public final boolean production = this.get("production", false);
 
     public Config(String file) {
         super(file);
