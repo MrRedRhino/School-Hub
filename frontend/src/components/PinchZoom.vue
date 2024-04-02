@@ -73,12 +73,11 @@ onMounted(() => {
       y: currentShift.y - newShift.y,
     }
 
-    var output = {
+    return {
       x: zoomOrigin.x * shift.x,
       y: zoomOrigin.y * shift.y,
       z: zoomDistance
     }
-    return output
   }
 
   function getCoordinateShiftDueToScale(size, scale) {
@@ -150,13 +149,13 @@ onMounted(() => {
     lastEvent = 'pinchstart';
   })
 
-  hammertime.on('panend', function (e) {
+  hammertime.on('panend', () => {
     last.x = current.x;
     last.y = current.y;
     lastEvent = 'panend';
   })
 
-  hammertime.on('pinchend', function (e) {
+  hammertime.on('pinchend', () => {
     last.x = current.x;
     last.y = current.y;
     last.z = current.z;
