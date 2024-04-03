@@ -12,17 +12,22 @@ import org.pipeman.rest.User;
 import org.pipeman.rest.reservation.Live;
 import org.pipeman.substitution_plan.PlanCache;
 import org.pipeman.substitution_plan.notifications.Subscriber;
+import redis.clients.jedis.DefaultJedisClientConfig;
+import redis.clients.jedis.HostAndPort;
+import redis.clients.jedis.JedisPooled;
 
 public class Database {
     private static final Jdbi JDBI;
+    private static final JedisPooled jedis;
 
     static {
-        HikariConfig config = new HikariConfig();
-        config.setUsername(Config.get().dbUser);
-        config.setPassword(Config.get().dbPassword);
-        config.setJdbcUrl(Config.get().dbUrl);
+        HikariConfig hikariConfig = new HikariConfig();
+        Config config = Config.get();
+        hikariConfig.setUsername(config.dbUser);
+        hikariConfig.setPassword(config.dbPassword);
+        hikariConfig.setJdbcUrl(config.dbUrl);
 
-        JDBI = Jdbi.create(new HikariDataSource(config));
+        JDBI = Jdbi.create(new HikariDataSource(hikariConfig));
         JDBI.registerRowMapper(ConstructorMapper.factory(User.Data.class));
         JDBI.registerRowMapper(ConstructorMapper.factory(Subscriber.class));
         JDBI.registerRowMapper(ConstructorMapper.factory(TodoApi.Todo.class));
@@ -31,6 +36,18 @@ public class Database {
         JDBI.registerRowMapper(ConstructorMapper.factory(PlanCache.PlanAccount.class));
         JDBI.registerRowMapper(ConstructorMapper.factory(NewsApi.NewsData.class));
         JDBI.installPlugin(new Jackson2Plugin());
+
+        String[] split = config.redisUrl.split("@");
+        DefaultJedisClientConfig builder = DefaultJedisClientConfig.builder()
+                .user(config.redisUser)
+                .password(config.redisPassword)
+                .database(Integer.parseInt(split[0]))
+                .build();
+        jedis = new JedisPooled(HostAndPort.from(split[1]), builder);
+    }
+
+    public static JedisPooled getJedis() {
+        return jedis;
     }
 
     public static Jdbi getJdbi() {

@@ -74,16 +74,7 @@ public class LoginApi {
                     .execute());
         }
 
-        String token = Utils.generateRandomString(42);
-
-        Database.getJdbi().useHandle(h -> h.createUpdate("""
-                        INSERT INTO sessions (token, user_id)
-                        VALUES (:token, :user_id)
-                        """)
-                .bind("token", token)
-                .bind("user_id", id)
-                .execute());
-
+        String token = User.createSession(id);
         ctx.json(Map.of("token", token));
         ctx.header(Header.SET_COOKIE, "auth=%s; Max-Age=34560000; Path=/".formatted(token));
     }
@@ -103,13 +94,7 @@ public class LoginApi {
             return;
         }
 
-        Database.getJdbi().withHandle(h -> h.createUpdate("""
-                        DELETE
-                        FROM sessions
-                        WHERE token = :token
-                        """)
-                .bind("token", cookie)
-                .execute());
+        Database.getJedis().del("sessions:" + cookie);
     }
 
     public static User getUser(Context ctx) {
