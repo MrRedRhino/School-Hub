@@ -1,9 +1,10 @@
 <script setup>
 import Popup from "@/components/Popup.vue";
 import {ref} from "vue";
+import Placeholder from "@/components/Placeholder.vue";
 
 const {page, book} = defineProps(["page", "book"]);
-const summaryText = ref("Einen Moment bitte...");
+const summaryText = ref("");
 
 fetch(`/api/books/${book}/${page}/summary`).then(r => r.text().then(text => {
   summaryText.value = text;
@@ -12,18 +13,21 @@ fetch(`/api/books/${book}/${page}/summary`).then(r => r.text().then(text => {
 
 <template>
   <Popup title="Zusammenfassung">
-    <h2>{{ summaryText }}</h2>
+    <div class="content">
+      <Placeholder v-if="summaryText === ''"/>
+      {{ summaryText }}
+    </div>
   </Popup>
 </template>
 
 <style scoped>
- h2 {
-   background: var(--background);
-   color: var(--text);
-   border-radius: 10px;
-   padding: 7px;
-   overflow: scroll;
-   min-height: 200px;
-   max-height: calc(100vh - 200px);
- }
+.content {
+  background: var(--background);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 7px;
+  overflow: scroll;
+  min-height: 200px;
+  max-height: calc(100vh - 200px);
+}
 </style>
