@@ -104,7 +104,7 @@ public class LoginApi {
     public static void getAccount(Context ctx) {
         User user = getUser(ctx);
         User.Data data = user.data();
-        ctx.json(Map.of("id", user.id(),
+        ctx.json(Map.of("id", String.valueOf(user.id()),
                         "name", data.name(),
                         "course-filter", String.join(", ", data.courseFilter()),
                         "settings", data.settings())
