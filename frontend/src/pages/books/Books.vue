@@ -1,31 +1,43 @@
 <script setup>
-import {computed, getCurrentInstance, nextTick, onUnmounted, ref} from "vue";
+import {computed, getCurrentInstance, nextTick, onUnmounted, ref, watch} from "vue";
 import Controls from "@/pages/books/Controls.vue";
 import {openPopup} from "@/popup.js";
 import SummaryPopup from "@/components/SummaryPopup.vue";
 import {activeElement, hoveredElement} from "@/utils.js";
+import TextTools from "@/pages/books/TextTools.vue";
 
 const htmlHolder = ref();
 const bookDisplay = ref();
 const pageContent = ref("");
 const currentBook = ref(null);
-const currentPage = ref(1);
+const page = ref(0);
+const currentPage = computed({
+  get: () => page.value,
+  set: newValue => page.value = Math.max(Math.min(newValue, currentBook.value["page-count"]), 1),
+});
 
 const zoomString = computed(() => autoZoom.value ? "Auto" : formatZoom(zoom.value));
 const zoom = ref(1);
 const autoZoom = ref(true);
 
-const isDrawing = ref(false);
-let eraser = false;
+const isDrawing = computed(() => activePencil.value);
 const canvasElement = ref();
 const liveCanvas = ref();
 const lineWidth = 10;
 const alpha = 0.4;
-const activeColor = ref(null);
-let lines = [];
+const activePencil = ref(null);
+const annotations = ref([]);
+
+const editedTextElement = ref();
+const editedText = ref(null);
+let dragMode = null;
+const readonly = ref(false);
+
+let lastMousePos = {x: null, y: null};
 let mouseDown = false;
+let hasMoved = false;
 let start;
-let saveId = null;
+let saveTimeout = null;
 
 let fadeoutTimeoutId = null;
 const controlsFadedIn = ref(true);
@@ -53,16 +65,14 @@ function refreshControlsFadeout() {
 }
 
 function scheduleSave() {
-  if (saveId !== null) {
-    clearTimeout(saveId);
-  }
-  saveId = setTimeout(() => saveAnnotations(), 3000);
+  clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(() => saveAnnotations(currentPage.value), 3000);
 }
 
-function runPendingSaveNow() {
-  if (saveId !== null) {
-    clearTimeout(saveId);
-    saveAnnotations();
+function runPendingSaveNow(page) {
+  if (saveTimeout !== null) {
+    clearTimeout(saveTimeout);
+    saveAnnotations(page);
   }
 }
 
@@ -73,6 +83,7 @@ function formatZoom(zoom) {
 async function openBook(id, page = 1) {
   const book = await fetch(`/api/books/${id}`);
   if (book.status > 200) return;
+  runPendingSaveNow(currentPage.value);
 
   currentBook.value = await book.json();
 
@@ -80,14 +91,13 @@ async function openBook(id, page = 1) {
     history.pushState(null, "", `/books?book=${currentBook.value.id}&page=${page}`);
   }
 
-  await setPage(page);
+  currentPage.value = page;
   hideResults();
 }
 
 async function setPage(page) {
   runPendingSaveNow();
   page = Math.max(Math.min(page, currentBook.value["page-count"]), 1);
-  currentPage.value = page;
 
   const html = await fetch(`/api/books/${currentBook.value["id"]}/${page}`);
   pageContent.value = await html.text();
@@ -100,42 +110,41 @@ async function setPage(page) {
   });
 }
 
-function setPencil(color, newEraser) {
-  activeColor.value = color;
-  eraser = newEraser;
-  isDrawing.value = eraser || color !== null;
-}
-
 function onMouseDown(event) {
   refreshControlsFadeout();
   mouseDown = true;
+  lastMousePos = {
+    x: event.clientX,
+    y: event.clientY
+  };
+  hasMoved = false;
 
   if (!isDrawing.value) return;
 
   start = {
     x: event.offsetX,
     y: event.offsetY,
-  }
+  };
 }
 
 function onMouseUp(event) {
   mouseDown = false;
+  dragMode = null;
 
-  if (activeColor.value !== null) {
+  if (start && activePencil.value && activePencil.value !== "eraser") {
     addLine(event.offsetX, event.offsetY);
     start = null;
   }
-
-  scheduleSave();
 }
 
 function addLine(endX, endY) {
-  lines.push({
+  annotations.value.push({
+    t: "l",
     x1: start.x,
     y1: start.y,
     x2: endX,
     y2: endY,
-    color: activeColor.value
+    c: activePencil.value
   });
 
   redrawCanvas();
@@ -154,13 +163,15 @@ function redrawCanvas() {
 
   configureContext(ctx);
 
-  for (let line of lines) {
-    ctx.strokeStyle = line.color;
+  for (let line of annotations.value) {
+    if (line.t === "l") {
+      ctx.strokeStyle = line.c;
 
-    ctx.beginPath();
-    ctx.moveTo(line.x1, line.y1);
-    ctx.lineTo(line.x2, line.y2);
-    ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(line.x1, line.y1);
+      ctx.lineTo(line.x2, line.y2);
+      ctx.stroke();
+    }
   }
 }
 
@@ -181,11 +192,38 @@ function onMouseMove(event) {
     y: event.offsetY
   };
 
-  if (eraser) {
+  const movementX = event.clientX - lastMousePos.x;
+  const movementY = event.clientY - lastMousePos.y;
+
+  if (editedText.value) {
+    if (dragMode === "left") {
+      editedText.value.x += movementX / zoom.value;
+      editedText.value.w += -movementX / zoom.value;
+      textAreaInput(editedTextElement.value);
+      scheduleSave();
+    } else if (dragMode === "right") {
+      editedText.value.w += movementX / zoom.value;
+      textAreaInput(editedTextElement.value);
+      scheduleSave();
+    } else if (dragMode === "center") {
+      editedText.value.x += movementX / zoom.value;
+      editedText.value.y += movementY / zoom.value;
+      readonly.value = true;
+      scheduleSave();
+    }
+  } else if (activePencil.value === "eraser") {
     erase(pos);
-  } else if (activeColor.value !== null) {
+    scheduleSave();
+  } else if (activePencil.value !== null) {
     drawPreview(pos);
+    scheduleSave();
   }
+
+  lastMousePos = {
+    x: event.clientX,
+    y: event.clientY
+  };
+  hasMoved = true;
 }
 
 function drawPreview(pos) {
@@ -199,27 +237,29 @@ function drawPreview(pos) {
 }
 
 function erase(pos) {
-  lines = lines.filter(item => !isIntersecting(pos, item));
+  annotations.value = annotations.value.filter(item => item.t !== "l" || !isIntersecting(pos, item));
   redrawCanvas();
 }
 
 function configureContext(ctx) {
   ctx.lineWidth = lineWidth;
-  ctx.strokeStyle = activeColor.value;
+  ctx.strokeStyle = activePencil.value;
   ctx.globalAlpha = alpha;
 }
 
-async function saveAnnotations() {
-  saveId = null;
-  await fetch(`/api/books/${currentBook.value["id"]}/${currentPage.value}/annotations`, {
-    method: "PUT",
-    body: JSON.stringify(lines)
-  });
-}
+async function saveAnnotations(page, keepalive = false) {
+  saveTimeout = null;
 
-function loadAnnotations(annotations) {
-  lines = annotations;
-  redrawCanvas();
+  const annotationsCopy = annotations.value.slice();
+  if (editedText.value) {
+    annotationsCopy.push(editedText.value);
+  }
+
+  await fetch(`/api/books/${currentBook.value["id"]}/${page}/annotations`, {
+    method: "PUT",
+    body: JSON.stringify(annotationsCopy),
+    keepalive: keepalive
+  });
 }
 
 async function pageChanged() {
@@ -230,8 +270,34 @@ async function pageChanged() {
   canvasElement.value.height = height;
   liveCanvas.value.height = height;
 
-  const annotations = await fetch(`/api/books/${currentBook.value["id"]}/${currentPage.value}/annotations`);
-  loadAnnotations(await annotations.json());
+  const response = await fetch(`/api/books/${currentBook.value["id"]}/${currentPage.value}/annotations`);
+  const newAnnotations = await response.json();
+  annotations.value = [];
+
+  newAnnotations.forEach(item => {
+    if (item.t === "l") {
+      annotations.value.push({
+        t: item.t || "l",
+        x1: item.x1,
+        y1: item.y1,
+        x2: item.x2,
+        y2: item.y2,
+        c: item.c || item.color
+      });
+    } else {
+      annotations.value.push({
+        t: item.t || "t",
+        x: item.x,
+        y: item.y,
+        c: item.c,
+        v: item.v,
+        w: item.w,
+        s: item.s
+      });
+    }
+  });
+
+  redrawCanvas();
   refreshControlsFadeout();
 }
 
@@ -293,10 +359,6 @@ function isIntersecting(circle, line) {
   return u2 <= 1 && u2 >= 0;
 }
 
-async function changePage(delta) {
-  await setPage(currentPage.value + delta);
-}
-
 async function search() {
   const encodedQuery = encodeURIComponent(query.value);
   const response = await fetch(`/api/books/search-completions?query=${encodedQuery}`)
@@ -320,11 +382,15 @@ function keyDown(event) {
 
   switch (event.key) {
     case "ArrowRight":
-      changePage(1);
+      currentPage.value++;
       break;
     case "ArrowLeft":
-      changePage(-1);
+      currentPage.value--;
       break;
+    case "Backspace":
+      if (editedText.value) {
+        deleteCurrentText();
+      }
   }
 }
 
@@ -349,10 +415,84 @@ loadBookFromUrl();
 
 window.addEventListener("popstate", loadBookFromUrl, false);
 window.addEventListener("keydown", keyDown);
+// window.addEventListener("pointermove", onMouseMove);
+// window.addEventListener("pointerdown", onMouseDown);
+// window.addEventListener("pointerup", onMouseUp);
+// window.addEventListener("pointercancel", cancelLine);
 
 onUnmounted(() => {
   window.removeEventListener("popstate", loadBookFromUrl, false);
   window.removeEventListener("keydown", keyDown);
+  // window.removeEventListener("pointermove", onMouseMove);
+  // window.removeEventListener("pointerdown", onMouseDown);
+  // window.removeEventListener("pointerup", onMouseUp);
+  // window.removeEventListener("pointercancel", cancelLine);
+});
+
+function deselectEditedText() {
+  annotations.value.push(editedText.value);
+  editedText.value = null;
+  dragMode = null;
+  scheduleSave();
+}
+
+function editText(text) {
+  annotations.value.splice(annotations.value.indexOf(text), 1);
+  editedText.value = text;
+  activePencil.value = null;
+  readonly.value = true;
+  nextTick(() => textAreaInput(editedTextElement.value));
+}
+
+function startDragging(target) {
+  if (target.getAttribute("drag-side") !== "center" || readonly.value) {
+    dragMode = target.getAttribute("drag-side");
+  }
+}
+
+function endDragging(target) {
+  if (target.getAttribute("drag-side") === 'center' && !hasMoved) {
+    readonly.value = false;
+  }
+}
+
+function textEdited(newValue) {
+  editedText.value.v = newValue;
+  scheduleSave();
+}
+
+function createNewText() {
+  const width = htmlHolder.value.clientWidth;
+  const height = htmlHolder.value.clientHeight;
+  const textWidth = 126;
+
+  const newText = {
+    t: "t",
+    x: (width - textWidth) / 2,
+    y: height / 2 - 8,
+    c: "#000",
+    v: "Text bearbeiten",
+    w: textWidth,
+    s: 16
+  };
+  annotations.value.push(newText);
+  editText(newText);
+}
+
+function deleteCurrentText() {
+  deselectEditedText();
+  annotations.value.splice(annotations.value.indexOf(editedText.value), 1);
+}
+
+function textAreaInput(element) {
+  element.style.height = "";
+  element.style.height = element.scrollHeight + "px";
+  textEdited(element.value);
+}
+
+watch(currentPage, (value, oldValue) => {
+  runPendingSaveNow(oldValue);
+  return setPage(value);
 });
 </script>
 
@@ -379,33 +519,53 @@ onUnmounted(() => {
     </div>
   </div>
 
-  <div style="height: calc(100vh - 100px); overflow: clip">
-    <div class="book-wrapper"
-         v-if="currentBook"
-         ref="bookDisplay"
-         @pointermove="refreshControlsFadeout"
-         @pointerdown="refreshControlsFadeout">
+  <div class="book-wrapper"
+       v-if="currentBook"
+       ref="bookDisplay"
+       @pointermove="onMouseMove"
+       @pointerdown="onMouseDown"
+       @pointerup="onMouseUp"
+       @pointercancel="cancelLine">
 
-      <div class="book" :style="{scale: zoom}" ref="htmlHolder">
-        <canvas ref="liveCanvas"
-                :class="{'no-pointer-events': !isDrawing}"
-                @pointerdown="onMouseDown($event)"
-                @pointermove="onMouseMove($event)"
-                @pointerup="onMouseUp($event)"
-                @pointercancel="cancelLine">
-        </canvas>
-        <canvas ref="canvasElement">
-        </canvas>
+    <div class="book" :style="{scale: zoom}" ref="htmlHolder">
+      <canvas ref="liveCanvas" :class="{'no-pointer-events': !isDrawing}">
+      </canvas>
+      <canvas ref="canvasElement">
+      </canvas>
+      <div class="text-annotations">
+        <a :style="{transform: `translate(${text.x}px, ${text.y}px)`, 'font-size': `${text.s}px`, color: text.c, width: `${text.w}px`} "
+           v-for="text in annotations.filter(a => a.t === 't')"
+           @click="editText(text)">
+          {{ text.v }}
+        </a>
 
-        <div v-html="pageContent"></div>
+        <a v-if="editedText" class="editing" v-click-outside="deselectEditedText"
+           :style="{transform: `translate(${editedText.x - 1}px, ${editedText.y - 1}px)`, width: `${editedText.w}px`, 'touch-action': 'none'}"
+           @pointerdown="startDragging($event.target)"
+           @pointerup="endDragging($event.target)">
+
+          <TextTools v-if="editedText" :text="editedText" @delete="deleteCurrentText"
+                     @resize="textAreaInput(editedTextElement)"></TextTools>
+
+          <textarea drag-side="center" :style="{'font-size': `${editedText.s}px`, color: editedText.c}"
+                    ref="editedTextElement" :readonly="readonly" rows="1" @input="textAreaInput($event.target)"
+                    :value="editedText.v"></textarea>
+
+          <div drag-side="left" class="drag left"></div>
+          <div drag-side="right" class="drag right"></div>
+        </a>
       </div>
+      <div v-html="pageContent"></div>
     </div>
   </div>
   <div ref="controls" v-if="currentBook" class="center"
        :style="{opacity: controlsVisible ? 1 : 0, 'pointer-events': controlsVisible ? 'all' : 'none'}">
-    <Controls @change-page="changePage" @set-page="setPage" @change-zoom="changeZoom" @change-pencil="setPencil" @open-summary="openSummary"
+    <Controls @change-zoom="changeZoom"
+              @open-summary="openSummary"
+              @add-text="createNewText"
+              v-model:active-pencil="activePencil"
               :book="currentBook"
-              :page="currentPage"
+              v-model:page="currentPage"
               :zoom="zoomString">
     </Controls>
   </div>
@@ -413,7 +573,7 @@ onUnmounted(() => {
 
 <style scoped>
 .search {
-  position: absolute;
+  position: fixed;
   background: var(--background-dark);
   width: calc(100vw - 20px);
   max-width: 300px;
@@ -472,8 +632,9 @@ onUnmounted(() => {
 
 .book-wrapper {
   display: flex;
-  height: calc(100vh - 180px);
+  height: calc(100dvh - 90px);
   justify-content: center;
+  overflow: hidden;
 }
 
 .book {
@@ -508,5 +669,47 @@ canvas:last-of-type {
 
 .no-pointer-events {
   pointer-events: none;
+}
+
+.text-annotations a {
+  position: absolute;
+  z-index: 100;
+  padding-left: 7px;
+  padding-right: 7px;
+  white-space: pre-wrap;
+  line-break: anywhere;
+}
+
+.text-annotations .editing {
+  border: 1px solid cornflowerblue;
+}
+
+textarea {
+  padding: 0;
+  resize: none;
+  border: none;
+  width: 100%;
+  background: none;
+}
+
+.text-annotations .editing .drag {
+  border-radius: 50%;
+  border: none;
+  position: absolute;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  background: cornflowerblue;
+  cursor: col-resize;
+}
+
+.text-annotations .editing .drag.left {
+  left: 0;
+  transform: translate(-50%, -50%);
+}
+
+.text-annotations .editing .drag.right {
+  right: 0;
+  transform: translate(50%, -50%);
 }
 </style>

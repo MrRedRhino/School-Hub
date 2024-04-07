@@ -1,11 +1,13 @@
 <script setup>
 
-import {getCurrentInstance, ref} from "vue";
+import {getCurrentInstance} from "vue";
 import {requireAuth} from "@/auth.js";
 
-const {book, page, zoom} = defineProps(["book", "page", "zoom"]);
-const emit = defineEmits(["set-page", "change-zoom", "change-page", "change-pencil", "open-summary"]);
-const activePencil = ref(null);
+const {book} = defineProps(["book"]);
+const activePencil = defineModel("activePencil");
+const page = defineModel("page");
+
+const emit = defineEmits(["change-zoom", "open-summary", "add-text"]);
 const {appContext} = getCurrentInstance();
 
 const colors = [
@@ -30,16 +32,16 @@ const colors = [
 function pageInput(event) {
   const newPage = parseInt(event.target.value);
   if (!isNaN(newPage)) {
-    emit("set-page", newPage);
+    page.value = newPage;
   }
 }
 
-function nextPage() {
-  emit("change-page", 1);
+function setPage(newPage) {
+  page.value = newPage;
 }
 
-function previousPage() {
-  emit("change-page", -1);
+function changePage(delta) {
+  page.value += delta;
 }
 
 function increaseZoom() {
@@ -50,16 +52,10 @@ function decreaseZoom() {
   emit("change-zoom", -10);
 }
 
-function changePencil(color, index) {
+function changePencil(color) {
   requireAuth("Anmerkungen hinzuzufügen", appContext, () => {
-    emit("change-pencil", index === activePencil.value ? null : color);
-    activePencil.value = index === activePencil.value ? null : index;
+    activePencil.value = activePencil.value === color ? null : color;
   });
-}
-
-function changeEraser() {
-  activePencil.value = activePencil.value === -1 ? null : -1;
-  emit("change-pencil", null, activePencil.value === -1);
 }
 
 function openSummary() {
@@ -70,9 +66,9 @@ function openSummary() {
 <template>
   <div class="wrapper">
     <div class="row">
-      <button @click="previousPage" class="page-button"><</button>
+      <button @click="changePage(-1)" class="page-button"><</button>
       <input class="page-input" :value="page" @input="pageInput($event)"><a> / {{ book["page-count"] }}</a>
-      <button @click="nextPage" class="page-button">></button>
+      <button @click="changePage(1)" class="page-button">></button>
       <button @click="openSummary" class="page-button summary-button">
         <svg class="svg-icon"
              fill="currentColor"
@@ -91,16 +87,21 @@ function openSummary() {
     </div>
 
     <div class="row">
-      <button class="pencil-button" v-for="(color, index) in colors"
+      <button class="pencil-button" v-for="color in colors"
               :style="{'border-color': color.border, 'background-color': color.color}"
-              :class="{active: activePencil === index}"
-              @mousedown="changePencil(color.color, index)">
+              :class="{active: activePencil === color.color}"
+              @mousedown="changePencil(color.color)">
       </button>
 
       <br>
-      <button class="pencil-button eraser" :class="{active: activePencil === -1}"
-              @mousedown="changeEraser"
-      ></button>
+      <button class="pencil-button eraser" :class="{active: activePencil === 'eraser'}"
+              @mousedown="changePencil('eraser')">
+      </button>
+
+      <br>
+      <button class="add-text-button" @click="emit('add-text')">
+        T
+      </button>
     </div>
   </div>
 </template>
@@ -143,9 +144,24 @@ function openSummary() {
   font-size: 14px;
 }
 
+.add-text-button {
+  border: none;
+  background-color: var(--blue);
+  border-radius: 100%;
+  color: var(--text);
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  text-align: center;
+  font-size: 20px;
+  font-family: serif;
+}
+
 .row {
   display: flex;
   gap: 5px;
+  justify-content: center;
 }
 
 .pencil-button {
