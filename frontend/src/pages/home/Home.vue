@@ -2,12 +2,16 @@
 import SubstitutionWidget from "@/pages/home/SubstitutionWidget.vue";
 import TodoWidget from "@/pages/home/TodoWidget.vue";
 import CountdownWidget from "@/pages/home/CountdownWidget.vue";
+import {ref} from "vue";
+import {account, settings} from "@/auth.js";
+
+const clazz = ref(account.value ? settings["class"] : localStorage.getItem("substitution-class"));
 </script>
 
 <template>
   <div class="widgets">
     <TodoWidget></TodoWidget>
-    <SubstitutionWidget></SubstitutionWidget>
+    <SubstitutionWidget v-if="clazz"></SubstitutionWidget>
     <CountdownWidget></CountdownWidget>
   </div>
 </template>
