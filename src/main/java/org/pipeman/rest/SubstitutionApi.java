@@ -125,16 +125,15 @@ public class SubstitutionApi {
     }
 
     public static void getPlans(Context ctx) {
-        long userId = LoginApi.getUser(ctx).id();
+        Long userId = User.fromRequest(ctx).map(User::id).orElse(null);
 
         List<Map<String, Object>> plans = Database.getJdbi().withHandle(h -> h.createQuery("""
-                        SELECT class, added_by = :user AS removable
+                        SELECT class, :user IS NOT NULL AND added_by = :user AS removable
                         FROM substitution_accounts
                         """)
                 .bind("user", userId)
                 .mapToMap()
                 .list());
-
         ctx.json(plans);
     }
 
