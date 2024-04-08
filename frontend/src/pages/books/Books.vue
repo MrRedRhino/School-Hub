@@ -53,9 +53,7 @@ const {appContext} = getCurrentInstance();
 
 function refreshControlsFadeout() {
   controlsFadedIn.value = true;
-  if (fadeoutTimeoutId !== null) {
-    clearTimeout(fadeoutTimeoutId);
-  }
+  clearTimeout(fadeoutTimeoutId);
 
   if (currentBook.value) {
     fadeoutTimeoutId = setTimeout(() => {
@@ -111,7 +109,12 @@ async function setPage(page) {
 }
 
 function onMouseDown(event) {
-  refreshControlsFadeout();
+  if (!controlsFadedIn.value || isDrawing.value) {
+    refreshControlsFadeout();
+  } else {
+    clearTimeout(fadeoutTimeoutId);
+    controlsFadedIn.value = false;
+  }
   mouseDown = true;
   lastMousePos = {
     x: event.clientX,
@@ -540,7 +543,7 @@ watch(currentPage, (value, oldValue) => {
         </a>
 
         <a v-if="editedText" class="editing" v-click-outside="deselectEditedText"
-           :style="{transform: `translate(${editedText.x - 1}px, ${editedText.y - 1}px)`, width: `${editedText.w}px`, 'touch-action': 'none'}"
+           :style="{transform: `translate(${editedText.x - 1}px, ${editedText.y - 1}px)`, width: `${editedText.w}px`}"
            @pointerdown="startDragging($event.target)"
            @pointerup="endDragging($event.target)">
 
@@ -690,6 +693,7 @@ textarea {
   border: none;
   width: 100%;
   background: none;
+  touch-action: none;
 }
 
 .text-annotations .editing .drag {
@@ -701,6 +705,7 @@ textarea {
   height: 10px;
   background: cornflowerblue;
   cursor: col-resize;
+  touch-action: none;
 }
 
 .text-annotations .editing .drag.left {
