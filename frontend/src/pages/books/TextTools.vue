@@ -65,6 +65,7 @@ button {
   color: var(--text);
   background: none;
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 .color-button {
