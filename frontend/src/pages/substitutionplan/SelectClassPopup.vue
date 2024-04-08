@@ -7,7 +7,7 @@ import {closePopup} from "@/popup.js";
 
 <template>
   <Popup title="Plan auswählen">
-    <div>
+    <div class="wrapper">
       <SelectClassMenu></SelectClassMenu>
       <button @click="closePopup">Fertig</button>
     </div>
@@ -15,7 +15,7 @@ import {closePopup} from "@/popup.js";
 </template>
 
 <style scoped>
-div {
+.wrapper {
   max-height: 80vh;
   overflow: scroll;
 }
