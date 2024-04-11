@@ -433,6 +433,9 @@ onUnmounted(() => {
 });
 
 function deselectEditedText() {
+  if (editedText.value.v.trim() === "") {
+    editedText.value.v = "Text bearbeiten";
+  }
   annotations.value.push(editedText.value);
   editedText.value = null;
   dragMode = null;
@@ -679,8 +682,7 @@ canvas:last-of-type {
   z-index: 100;
   padding-left: 7px;
   padding-right: 7px;
-  white-space: pre-wrap;
-  line-break: anywhere;
+  overflow-wrap: anywhere;
 }
 
 .text-annotations .editing {
