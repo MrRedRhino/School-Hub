@@ -7,21 +7,21 @@ const days = ref("0");
 const hours = ref("0");
 const minutes = ref("0");
 const seconds = ref("0");
-const ms = ref("0000");
+const ms = ref("000");
 
 function padZeros(n) {
   if (n < 10) return "0" + n;
   return n;
 }
 
-function padMsZeroes(n) {
-  if (n < 100) {
-    return "0" + n;
+function padMsZeroes(ms) {
+  if (ms < 10) {
+    return "00" + ms;
   }
-  if (n < 10) {
-    return "00" + n;
+  if (ms < 100) {
+    return "0" + ms;
   }
-  return n;
+  return ms;
 }
 
 function updateTime() {
