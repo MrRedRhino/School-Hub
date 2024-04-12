@@ -28,11 +28,17 @@ public class GoogleStorage {
 
     public static Upload createNewUpload() {
         long id = Main.ID_GENERATOR.next();
+
+        PostPolicyV4.PostPolicyV4Document.of("", PostPolicyV4.PostConditionsV4.newBuilder()
+                .addContentLengthRangeCondition(0, 15_000_000)
+                .build());
+
         BlobInfo blobInfo = BlobInfo.newBuilder(bucket, String.valueOf(id)).build();
         String url = STORAGE.signUrl(blobInfo,
                         15,
                         TimeUnit.MINUTES,
-                        Storage.SignUrlOption.httpMethod(HttpMethod.PUT))
+                        Storage.SignUrlOption.httpMethod(HttpMethod.PUT)
+                )
                 .toExternalForm();
         return new Upload(id, url);
     }
