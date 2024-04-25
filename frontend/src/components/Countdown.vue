@@ -2,6 +2,7 @@
 import {ref} from "vue";
 
 const {date} = defineProps(["date"]);
+const isNegative = ref(false);
 
 const days = ref("0");
 const hours = ref("0");
@@ -33,6 +34,8 @@ function updateTime() {
   minutes.value = padZeros(timeDifference.getMinutes());
   seconds.value = padZeros(timeDifference.getSeconds());
   ms.value = padMsZeroes(timeDifference.getMilliseconds());
+
+  isNegative.value = diffMs < 0;
 }
 
 setInterval(updateTime, 20);
@@ -40,7 +43,11 @@ updateTime();
 </script>
 
 <template>
-  <div class="wrapper">
+  <h1 v-if="isNegative">
+    Ayyy! Geschafft! 🎉
+  </h1>
+
+  <div v-else class="countdown-wrapper">
     <div class="unit">
       <h1>{{ days }}</h1>
       <h2>TAGE</h2>
@@ -71,7 +78,6 @@ updateTime();
 <style scoped>
 h1 {
   margin: 0;
-  font-family: "JetBrains Mono", serif;
   font-weight: normal;
 }
 
@@ -81,9 +87,13 @@ h2 {
   color: var(--text-dark);
 }
 
-.wrapper {
+.countdown-wrapper {
   display: flex;
   gap: 10px;
+}
+
+.countdown-wrapper h1 {
+  font-family: "JetBrains Mono", serif;
 }
 
 .unit {
