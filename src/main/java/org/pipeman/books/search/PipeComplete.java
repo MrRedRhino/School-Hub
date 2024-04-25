@@ -1,16 +1,19 @@
 package org.pipeman.books.search;
 
 import info.debatty.java.stringsimilarity.JaroWinkler;
-import org.jetbrains.annotations.NotNull;
+import org.pipeman.Database;
 import org.pipeman.books.BookIndex;
 import org.pipeman.books.BookIndex.Book;
 import org.pipeman.utils.Utils;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 
 public class PipeComplete {
+    private static Map<Integer, Double> scoreCache = null;
+    private static long scoreRefresh = 0;
     private static final JaroWinkler JW = new JaroWinkler(0.1);
 
     private static float similarity(String s1, String s2) {
@@ -35,30 +38,47 @@ public class PipeComplete {
         return out;
     }
 
+    private static Map<Integer, Double> getScores() {
+        if (System.currentTimeMillis() - 10 * 60 * 1000 > scoreRefresh) {
+            scoreRefresh = System.currentTimeMillis();
+
+            scoreCache = Database.getJdbi().withHandle(h -> h.createQuery("""
+                            WITH RecentBookStats AS (SELECT book,
+                                                            sum(count) AS sum_count
+                                                     FROM books_stats
+                                                     WHERE date > current_date - INTERVAL '14 days'
+                                                     GROUP BY book),
+                                 MaxSum AS (SELECT max(sum_count) AS max_sum
+                                            FROM RecentBookStats)
+                            SELECT rbs.book,
+                                   rbs.sum_count / CAST(ms.max_sum AS float) AS score
+                            FROM RecentBookStats rbs,
+                                 MaxSum ms
+                            """)
+                    .mapToMap()
+                    .collectToMap(map -> (int) map.get("book"), map -> (double) map.get("score")));
+        }
+        return scoreCache;
+    }
+
     public static List<Book> getCompletionsSorted(String query) {
         List<Book> out = new ArrayList<>();
         if (query.isBlank()) return List.of();
 
+        Map<Integer, Double> scores = getScores();
+        Comparator<Completion> comparator = Comparator.comparing(c -> c.similarity * scores.getOrDefault(c.book.id(), 0d));
+
         List<Completion> completions = getCompletions(query);
-        Collections.sort(completions);
+        completions.removeIf(c -> c.similarity <= 0.6);
+        completions.sort(comparator.reversed());
 
         for (Completion entry : completions) {
-            if (entry.similarity > 0.6) {
-                out.add(entry.book);
-            }
+            out.add(entry.book);
             if (out.size() >= 3) break;
         }
         return out;
     }
 
-    public record Completion(Book book, float similarity, float relevance) implements Comparable<Completion> {
-        public Completion(Book book, float similarity) {
-            this(book, similarity, similarity * book.relevance());
-        }
-
-        @Override
-        public int compareTo(@NotNull PipeComplete.Completion o) {
-            return Float.compare(o.relevance, relevance);
-        }
+    public record Completion(Book book, float similarity) {
     }
 }
