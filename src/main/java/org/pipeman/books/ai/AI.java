@@ -2,14 +2,14 @@ package org.pipeman.books.ai;
 
 import org.pipeman.Config;
 import org.pipeman.Database;
-import org.pipeman.books.ai.impl.OpenAISummarizer;
 import org.pipeman.books.TextExtractor;
+import org.pipeman.books.ai.impl.GroqSummarizer;
 
 import java.util.Optional;
 
 public class AI {
     public static final UsageLimit USAGE_LIMITER = new UsageLimit();
-    private static final Summarizer SUMMARIZER = new OpenAISummarizer(Config.get().aiKey);
+    private static final Summarizer SUMMARIZER = new GroqSummarizer(Config.get().aiKey);
 
     public static String getSummary(int bookId, int page) {
         String key = bookId + " " + page;
