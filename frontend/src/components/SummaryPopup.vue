@@ -29,5 +29,6 @@ fetch(`/api/books/${book}/${page}/summary`).then(r => r.text().then(text => {
   overflow: scroll;
   min-height: 200px;
   max-height: calc(100vh - 200px);
+  white-space: pre-wrap;
 }
 </style>
