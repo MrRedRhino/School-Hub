@@ -27,7 +27,7 @@ public class Groq {
                 .put("messages", new JSONArray()
                         .put(new JSONObject()
                                 .put("role", "system")
-                                .put("content", "Zusammenfassen in Stichpunkten in max. 150 Wörtern.")
+                                .put("content", "Zusammenfassen in Stichpunkten in max. 150 Wörtern. Antwort in der Sprache des Textes.")
                         )
                         .put(new JSONObject()
                                 .put("role", "user")
