@@ -62,5 +62,8 @@ public class User {
     }
 
     public record Data(String name, Set<String> courseFilter, @Json Map<String, ?> settings) {
+        public String surname() {
+            return name.split(", ")[1];
+        }
     }
 }

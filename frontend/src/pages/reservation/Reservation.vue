@@ -1,5 +1,5 @@
 <script setup>
-import {computed, getCurrentInstance, ref} from "vue";
+import {computed, getCurrentInstance, ref, watch} from "vue";
 import {openPopup} from "@/popup.js";
 import SeatPopup from "@/pages/reservation/SeatPopup.vue";
 import {account, requireAuth} from "@/auth.js";
@@ -242,6 +242,12 @@ const seats = [
 
   // gelbe Stühle fehlen
 ]
+
+const mailAddress = ref();
+const sendingMail = ref(false);
+const invalidMail = ref(false);
+const mailMessage = ref();
+
 const reservations = ref({});
 const ownReservationsShown = ref(false);
 const ownReservations = computed(() => {
@@ -333,25 +339,53 @@ function getColor(reservation) {
   }
   return "#B3B3B3";
 }
+
+async function sendMail() {
+  mailMessage.value = "";
+  invalidMail.value = false;
+  sendingMail.value = true;
+  const response = await fetch("/api/reservations/send-mail?email-address=" + encodeURIComponent(mailAddress.value), {
+    method: "POST"
+  });
+  sendingMail.value = false;
+
+
+  invalidMail.value = response.status !== 200;
+  if (response.status === 200) {
+    mailMessage.value = "Mail wurde verschickt";
+    mailAddress.value = "";
+  } else {
+    mailMessage.value = "Ungültige Mail Adresse";
+  }
+}
+
+watch(mailAddress, () => {
+  invalidMail.value = false;
+});
 </script>
 
 <template>
-  <div v-click-outside="hideReservations">
+  <div class="reservations-wrapper" v-click-outside="hideReservations">
     <a @click="showReservations">Meine Reservierungen</a>
     <div class="reservations" v-if="ownReservationsShown">
       <SeatLocation v-for="reservation in ownReservations" :location="reservation"></SeatLocation>
       <h1 v-if="ownReservations.length === 0">Keine Reservierungen</h1>
+
+      <div v-if="ownReservations.length > 0">
+        <h1>Als E-Mail senden:</h1>
+        <input v-model="mailAddress" :class="{invalid: invalidMail}" type="email" placeholder="E-Mail Adresse">
+        <button @click="sendMail" :disabled="sendingMail">Senden</button>
+        <h2 v-if="mailMessage">{{ mailMessage }} </h2>
+      </div>
     </div>
   </div>
 
   <PinchZoom>
-    <!--    <div class="plan">-->
     <div v-for="seat in seats"
          class="seat"
          :style="{transform: `translate(${seat.x}px, ${seat.y}px) rotate(${seat.angle + 'deg'})`, background: getColor(reservations[getId(seat.location)])}"
          @click="reserveSeat(seat.location)">
     </div>
-    <!--    </div>-->
   </PinchZoom>
 </template>
 
@@ -370,7 +404,6 @@ a {
   position: fixed;
   margin-left: 8px;
   margin-top: 4px;
-  width: 200px;
   display: grid;
   z-index: 8;
   background: var(--background-dark);
@@ -384,7 +417,14 @@ a {
   color: var(--text);
   font-size: 18px;
   font-weight: normal;
-  margin: 0;
+  margin: 0 0 5px;
+}
+
+.reservations h2 {
+  color: var(--text);
+  font-size: 16px;
+  font-weight: normal;
+  margin: 5px 0 0 4px;
 }
 
 .seat {
@@ -396,14 +436,38 @@ a {
   cursor: pointer;
 }
 
-#plan-wrapper {
-  height: 400px;
-  width: 400px;
-  overflow: scroll;
+.reservations-wrapper {
+  margin-bottom: 10px;
 }
 
-.plan {
-  position: relative;
-  background: grey;
+input {
+  height: 34px;
+  background: var(--background);
+  color: var(--text);
+  border-radius: 10px;
+  width: 220px;
+  font-size: 16px;
+  border: none;
+  padding: 0 0 0 10px;
+}
+
+input.invalid {
+  outline: #ff2549 solid 2px;
+}
+
+button {
+  height: 34px;
+  border-radius: 10px;
+  border: none;
+  background: var(--blue);
+  color: var(--text);
+  font-size: 16px;
+  cursor: pointer;
+  margin-left: 5px;
+}
+
+button:disabled {
+  background: rgba(255, 255, 255, 0.4);
+  cursor: default;
 }
 </style>

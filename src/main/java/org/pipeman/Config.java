@@ -28,6 +28,8 @@ public class Config extends AbstractConfig {
     public final String vapidPrivateKey = this.get("vapid-private-key", "");
     public final String vapidSubject = this.get("vapid-subject", "");
 
+    public final String resendKey = this.get("resend-key", "");
+
     public final String aiKey = this.get("ai-key", "");
     public final int dailyUsageLimit = this.get("daily-usage-limit", 233_333);
 

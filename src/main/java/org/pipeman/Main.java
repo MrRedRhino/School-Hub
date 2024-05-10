@@ -99,6 +99,7 @@ public class Main {
                         sse("live", ReservationApi::sse);
                         put("{seat}", ReservationApi::reserveSeat);
                         delete("{seat}", ReservationApi::removeReservation);
+                        post("send-mail", ReservationApi::sendReservationsAsEmail);
                     });
 
                     get("news", NewsApi::getNews);

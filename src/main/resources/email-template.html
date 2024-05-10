@@ -1,0 +1,38 @@
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<h2>Hallo %s, </h2>
+<strong>folgende Sitzplätze sind für Dich reserviert:</strong>
+<ul>
+    %s
+</ul>
+
+<strong>Viel Spaß auf der Abi-Feier!</strong>
+<style>
+    .location-wrapper {
+        width: 150px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-gap: 3px 6px;
+    }
+
+    .location-wrapper a {
+        color: black;
+        margin: 0;
+    }
+
+    .location-wrapper .key {
+        font-weight: bold;
+    }
+
+    .location-wrapper .value {
+        font-weight: normal;
+    }
+
+    ul {
+        padding-left: 10px;
+        list-style: none;
+    }
+
+    li {
+        margin-bottom: 10px;
+    }
+</style>

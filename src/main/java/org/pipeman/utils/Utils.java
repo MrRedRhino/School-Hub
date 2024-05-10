@@ -2,6 +2,9 @@ package org.pipeman.utils;
 
 import org.json.JSONArray;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
 
@@ -48,5 +51,13 @@ public class Utils {
 
     public static String substring(String in, int end) {
         return in.substring(0, Math.min(in.length(), end));
+    }
+
+    public static String readResourceString(String fileName) {
+        try (InputStream stream = Utils.class.getResourceAsStream("/" + fileName)) {
+            return new String(Objects.requireNonNull(stream).readAllBytes());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
