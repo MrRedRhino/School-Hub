@@ -1,36 +1,35 @@
 <script setup>
 import {onMounted, ref} from "vue";
 
+const zoomSpeed = 0.8;
 let hasMoved = false;
-let startX = 0, startY = 0;
 const scale = ref(1);
 const posX = ref(0);
 const posY = ref(0);
 let mouseDown = false;
 let lastPosX = 0;
-let previousCenter = {};
 let lastPosY = 0;
+let lastTouches = null;
 
 onMounted(() => {
   const wrapper = document.getElementById("dragWrapper");
-
-  let multiTouch = false;
-  let startDistance = null;
-  let startScale = 1;
+  posX.value = lastPosX = (wrapper.clientWidth) / 2;
+  posY.value = lastPosY = (wrapper.clientHeight) / 2;
+  scale.value = Math.min(0.7, wrapper.clientWidth / 1400);
 
   wrapper.addEventListener("mousedown", e => {
     e.preventDefault();
-    startX = e.x;
-    startY = e.y;
     mouseDown = true;
   }, {capture: true});
 
   wrapper.addEventListener("mousemove", e => {
     if (mouseDown) {
-      posX.value = e.x - startX + lastPosX;
-      posY.value = e.y - startY + lastPosY;
+      posX.value += e.x - lastPosX;
+      posY.value += e.y - lastPosY;
       hasMoved = true;
     }
+    lastPosX = e.x;
+    lastPosY = e.y;
   });
 
   wrapper.addEventListener("mouseup", e => {
@@ -48,48 +47,46 @@ onMounted(() => {
   }, {capture: true});
 
   wrapper.addEventListener("wheel", e => {
-    if (e.deltaY < 0) {
-      scale.value *= 1.1;
-    } else if (e.deltaY > 0) {
-      scale.value /= 1.1;
-    }
-  })
+    const pointer = {
+      x: e.pageX - wrapper.offsetLeft,
+      y: e.pageY - wrapper.offsetTop
+    };
+    const target = {
+      x: (pointer.x - posX.value) / scale.value,
+      y: (pointer.y - posY.value) / scale.value
+    };
+
+    scale.value *= e.deltaY > 0 ? zoomSpeed : 1 / zoomSpeed;
+
+    posX.value = -target.x * scale.value + pointer.x;
+    posY.value = -target.y * scale.value + pointer.y;
+  });
 
   wrapper.addEventListener('touchstart', function (e) {
-    if (e.touches.length === 2) {
-      multiTouch = true;
-      startDistance = getDistance(e.touches);
-      startScale = scale.value;
-    } else {
-      multiTouch = false;
-      startX = e.touches[0].pageX;
-      startY = e.touches[0].pageY;
-    }
+    lastTouches = e.touches;
   });
 
   wrapper.addEventListener('touchmove', function (e) {
     e.preventDefault();
-    if (multiTouch && e.touches.length === 2) {
-      const center = getCenter(e.touches);
 
-      const currentDistance = getDistance(e.touches);
-      const ratio = currentDistance / startDistance;
-      scale.value = startScale * ratio;
-      posX.value += center.x - previousCenter.x;
-      posY.value += center.y - previousCenter.y;
+    if (lastTouches.length === 1) {
+      posX.value += (e.touches[0].pageX - lastTouches[0].pageX);
+      posY.value += (e.touches[0].pageY - lastTouches[0].pageY);
 
-      previousCenter = center;
-    } else if (!multiTouch && e.touches.length === 1) {
-      posX.value = e.touches[0].pageX - startX + lastPosX;
-      posY.value = e.touches[0].pageY - startY + lastPosY;
+    } else if (lastTouches.length === 2) {
+      const pointer = getCenter(e.touches);
+      const target = {
+        x: (pointer.x - posX.value) / scale.value,
+        y: (pointer.y - posY.value) / scale.value
+      };
+
+      scale.value *= getDistance(e.touches) / getDistance(lastTouches);
+
+      const lastCenter = getCenter(lastTouches);
+      posX.value = -target.x * scale.value + pointer.x + pointer.x - lastCenter.x;
+      posY.value = -target.y * scale.value + pointer.y + pointer.y - lastCenter.y;
     }
-  });
-
-  wrapper.addEventListener('touchend', function (e) {
-    if (!multiTouch) {
-      lastPosX = posX.value;
-      lastPosY = posY.value;
-    }
+    lastTouches = e.touches;
   });
 
   function getDistance(touches) {
@@ -99,11 +96,20 @@ onMounted(() => {
   }
 
   function getCenter(touches) {
-    const diffX = touches[0].pageX - touches[1].pageX;
-    const diffY = touches[0].pageY - touches[1].pageY;
+    const pointer1 = {
+      x: touches[0].pageX - wrapper.offsetLeft,
+      y: touches[0].pageY - wrapper.offsetTop
+    };
+    const pointer2 = {
+      x: touches[1].pageX - wrapper.offsetLeft,
+      y: touches[1].pageY - wrapper.offsetTop
+    };
+
+    const diffX = pointer1.x - pointer2.x;
+    const diffY = pointer1.y - pointer2.y;
     return {
-      x: touches[1].pageX + 0.5 * diffX,
-      y: touches[1].pageY + 0.5 * diffY
+      x: pointer2.x + 0.5 * diffX,
+      y: pointer2.y + 0.5 * diffY
     };
   }
 });
@@ -119,17 +125,13 @@ onMounted(() => {
 
 <style scoped>
 #dragWrapper {
-  background: whitesmoke;
-  width: 100vw;
-  height: calc(100vh - 200px);
   position: relative;
   overflow: hidden;
+  height: 100%;
 }
 
 #drag {
   touch-action: none;
-  height: 300px;
-  width: 200px;
   position: absolute;
   left: 0;
   top: 0;
