@@ -1,7 +1,6 @@
 <script setup>
 import {onMounted, ref} from "vue";
 
-const zoomSpeed = 0.8;
 let hasMoved = false;
 const scale = ref(1);
 const posX = ref(0);
@@ -10,6 +9,7 @@ let mouseDown = false;
 let lastPosX = 0;
 let lastPosY = 0;
 let lastTouches = null;
+let startScale = 0;
 
 onMounted(() => {
   const wrapper = document.getElementById("dragWrapper");
@@ -32,7 +32,7 @@ onMounted(() => {
     lastPosY = e.y;
   });
 
-  wrapper.addEventListener("mouseup", e => {
+  wrapper.addEventListener("mouseup", () => {
     mouseDown = false;
     lastPosX = posX.value;
     lastPosY = posY.value;
@@ -56,17 +56,20 @@ onMounted(() => {
       y: (pointer.y - posY.value) / scale.value
     };
 
-    scale.value *= e.deltaY > 0 ? zoomSpeed : 1 / zoomSpeed;
+    const maxScroll = 3;
+    const delta = Math.min(maxScroll, Math.max(-maxScroll, e.deltaY));
+    scale.value += scale.value * delta * -0.05;
 
     posX.value = -target.x * scale.value + pointer.x;
     posY.value = -target.y * scale.value + pointer.y;
+    e.preventDefault();
   });
 
-  wrapper.addEventListener('touchstart', function (e) {
+  wrapper.addEventListener('touchstart', e => {
     lastTouches = e.touches;
   });
 
-  wrapper.addEventListener('touchmove', function (e) {
+  wrapper.addEventListener('touchmove', e => {
     e.preventDefault();
 
     if (lastTouches.length === 1) {
@@ -87,6 +90,11 @@ onMounted(() => {
       posY.value = -target.y * scale.value + pointer.y + pointer.y - lastCenter.y;
     }
     lastTouches = e.touches;
+  });
+
+  wrapper.addEventListener("gesturestart", e => {
+    startScale = scale.value;
+    e.preventDefault();
   });
 
   function getDistance(touches) {
@@ -128,10 +136,10 @@ onMounted(() => {
   position: relative;
   overflow: hidden;
   height: 100%;
+  touch-action: none;
 }
 
 #drag {
-  touch-action: none;
   position: absolute;
   left: 0;
   top: 0;
