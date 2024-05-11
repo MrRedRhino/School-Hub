@@ -121,11 +121,11 @@ public class ReservationApi {
     }
 
     private static byte[] createPlan(List<String> reservations) throws IOException {
-        int width = 2600;
-        int height = 1100;
+        int width = 3000;
+        int height = 1400;
         int seatSize = 50;
-        int xOffset = 1300;
-        int yOffset = 500;
+        int xOffset = 1500;
+        int yOffset = 600;
         Color reserved = new Color(255, 32, 70);
         Color available = new Color(179, 179, 179);
 
@@ -134,6 +134,10 @@ public class ReservationApi {
         graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         graphics.setBackground(Color.WHITE);
         graphics.clearRect(0, 0, width, height);
+
+        graphics.setColor(Color.BLACK);
+        graphics.setFont(new Font("Arial", Font.PLAIN, 100));
+        graphics.drawString("Bühne", 1350, 300);
 
         for (Object seat : SEATS) {
             JSONObject seatJson = (JSONObject) seat;
