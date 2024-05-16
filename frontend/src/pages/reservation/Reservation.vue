@@ -680,43 +680,40 @@ watch(mailAddress, () => {
 </script>
 
 <template>
-  <div class="reservations-wrapper" v-click-outside="hideReservations">
-    <a @click="showReservations">Meine Reservierungen</a>
-    <div class="reservations" v-if="ownReservationsShown">
-      <SeatLocation v-for="reservation in ownReservations" :location="reservation"></SeatLocation>
-      <h1 v-if="ownReservations.length === 0">Keine Reservierungen</h1>
-
-      <div v-if="ownReservations.length > 0">
-        <h1>Als E-Mail senden:</h1>
-        <input v-model="mailAddress" :class="{invalid: invalidMail}" type="email" placeholder="E-Mail Adresse">
-        <button @click="sendMail" :disabled="sendingMail">Senden</button>
-        <h2 v-if="mailMessage">{{ mailMessage }} </h2>
-      </div>
-    </div>
-  </div>
-
   <div class="plan-wrapper">
+    <div class="reservations-wrapper" v-click-outside="hideReservations">
+      <button class="open-reservations" @click="showReservations">Meine Reservierungen</button>
+      <Transition>
+        <div class="reservations" v-if="ownReservationsShown">
+          <SeatLocation v-for="reservation in ownReservations" :location="reservation"></SeatLocation>
+          <h1 v-if="ownReservations.length === 0">Keine Reservierungen</h1>
+
+          <div v-if="ownReservations.length > 0">
+            <h1>Als E-Mail senden:</h1>
+            <input v-model="mailAddress" :class="{invalid: invalidMail}" type="email" placeholder="E-Mail Adresse">
+            <button @click="sendMail" :disabled="sendingMail">Senden</button>
+            <h2 v-if="mailMessage">{{ mailMessage }} </h2>
+          </div>
+        </div>
+      </Transition>
+    </div>
+
     <PinchZoom>
       <div v-for="seat in seats"
            class="seat"
            :style="{transform: `translate(${seat.x}px, ${seat.y}px) rotate(${seat.angle + 'deg'})`, background: getColor(reservations[getId(seat.location)])}"
            @click="reserveSeat(seat.location)">
       </div>
+
+      <svg width="1600" height="800" style="z-index: 11; position: relative; transform: translate(-800px, -650px)">
+        <polygon points="50, 50, 500, 560, 1120, 560, 1550, 50" fill="brown"/>
+        <text x="650" font-size="100" y="350">Bühne</text>
+      </svg>
     </PinchZoom>
   </div>
 </template>
 
 <style scoped>
-a {
-  color: cornflowerblue;
-  text-decoration: underline;
-  cursor: pointer;
-  z-index: 9;
-  position: relative;
-  margin-left: 10px;
-  font-size: 18px;
-}
-
 .plan-wrapper {
   height: calc(100dvh - 130px);
   background: var(--background-dark);
@@ -726,16 +723,22 @@ a {
 }
 
 .reservations {
-  position: fixed;
-  margin-left: 8px;
   margin-top: 4px;
   display: grid;
-  z-index: 8;
   background: var(--background-dark);
   box-shadow: -1px -1px 27px 10px rgba(0, 0, 0, 0.5);
   border-radius: 10px;
   padding: 10px 10px;
   row-gap: 10px;
+}
+
+.reservations.v-enter-active, .v-leave-active {
+  transition: opacity 0.1s, scale 0.1s;
+}
+
+.reservations.v-enter-from, .v-leave-to {
+  opacity: 0;
+  scale: 0.9;
 }
 
 .reservations h1 {
@@ -762,7 +765,17 @@ a {
 }
 
 .reservations-wrapper {
-  margin-bottom: 10px;
+  position: absolute;
+  width: 309px;
+  z-index: 9;
+  margin: 10px;
+}
+
+.open-reservations {
+  width: 100%;
+  margin: 0;
+  position: relative;
+  z-index: 8;
 }
 
 input {
@@ -789,6 +802,11 @@ button {
   font-size: 16px;
   cursor: pointer;
   margin-left: 5px;
+  transition: scale 0.1s;
+}
+
+button:active {
+  scale: 0.97;
 }
 
 button:disabled {
