@@ -692,7 +692,7 @@ watch(mailAddress, () => {
             <h1>Als E-Mail senden:</h1>
             <input v-model="mailAddress" :class="{invalid: invalidMail}" type="email" placeholder="E-Mail Adresse">
             <button @click="sendMail" :disabled="sendingMail">Senden</button>
-            <h2 v-if="mailMessage">{{ mailMessage }} </h2>
+            <h2 v-if="mailMessage">{{ mailMessage }}</h2>
           </div>
         </div>
       </Transition>
@@ -705,7 +705,7 @@ watch(mailAddress, () => {
            @click="reserveSeat(seat.location)">
       </div>
 
-      <svg width="1600" height="800" style="z-index: 11; position: relative; transform: translate(-800px, -650px)">
+      <svg class="stage-svg" width="1600" height="800">
         <polygon points="50, 50, 500, 560, 1120, 560, 1550, 50" fill="brown"/>
         <text x="650" font-size="100" y="350">Bühne</text>
       </svg>
@@ -720,6 +720,13 @@ watch(mailAddress, () => {
   margin: 10px;
   border-radius: 20px;
   overflow: hidden;
+}
+
+.stage-svg {
+  z-index: 11;
+  position: relative;
+  transform: translate(-800px, -650px);
+  pointer-events: none;
 }
 
 .reservations {

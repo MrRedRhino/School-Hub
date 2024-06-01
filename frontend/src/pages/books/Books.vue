@@ -15,6 +15,7 @@ const currentPage = computed({
   get: () => page.value,
   set: newValue => page.value = Math.max(Math.min(newValue, currentBook.value["page-count"]), 1),
 });
+const darkMode = ref(false);
 
 const zoomString = computed(() => autoZoom.value ? "Auto" : formatZoom(zoom.value));
 const zoom = ref(1);
@@ -561,7 +562,8 @@ watch(currentPage, (value, oldValue) => {
           <div drag-side="right" class="drag right"></div>
         </a>
       </div>
-      <div v-html="pageContent"></div>
+      <div v-html="pageContent"
+           :style="{filter: darkMode ? 'grayscale(0.75) invert(1) sepia(0.75) contrast(70%)' : '', transition: 'filter 0.5s'}"></div>
     </div>
   </div>
   <div ref="controls" v-if="currentBook" class="center"
@@ -569,6 +571,7 @@ watch(currentPage, (value, oldValue) => {
     <Controls @change-zoom="changeZoom"
               @open-summary="openSummary"
               @add-text="createNewText"
+              @toggle-dark-mode="darkMode = !darkMode"
               v-model:active-pencil="activePencil"
               :book="currentBook"
               v-model:page="currentPage"

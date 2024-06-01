@@ -7,7 +7,7 @@ const {book} = defineProps(["book"]);
 const activePencil = defineModel("activePencil");
 const page = defineModel("page");
 
-const emit = defineEmits(["change-zoom", "open-summary", "add-text"]);
+const emit = defineEmits(["change-zoom", "open-summary", "add-text", "toggle-dark-mode"]);
 const {appContext} = getCurrentInstance();
 
 const colors = [
@@ -61,6 +61,10 @@ function changePencil(color) {
 function openSummary() {
   emit("open-summary");
 }
+
+function toggleDarkMode() {
+  emit("toggle-dark-mode");
+}
 </script>
 
 <template>
@@ -79,6 +83,7 @@ function openSummary() {
               d="M673.888 466.656c-11.744-25.568-48.416-24.64-58.816 1.536l-132.8 333.76a32 32 0 0 0 59.488 23.68l32.608-81.92c0.576 0.032 1.088 0.32 1.664 0.32h154.848l38.176 83.104a31.968 31.968 0 1 0 58.144-26.72l-153.312-333.76zM599.68 680l47.264-118.72 54.528 118.72H599.68z"/>
         </svg>
       </button>
+      <button @click="toggleDarkMode" class="page-button">🌗</button>
 
       <!--      <br>-->
       <!--      <button class="page-button" @click="decreaseZoom">-</button>-->
