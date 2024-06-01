@@ -1,11 +1,10 @@
-package org.pipeman.books.ai.impl;
+package org.pipeman.books.ai;
 
 import io.javalin.http.ContentType;
 import io.javalin.http.Header;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONPointer;
-import org.pipeman.books.ai.AI;
 import org.pipeman.utils.Utils;
 
 import java.net.URI;
@@ -18,16 +17,13 @@ public class Groq {
     private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
     private static final JSONPointer RESPONSE_POINTER = new JSONPointer("/choices/0/message/content");
 
-    public static String getSummary(String input, String token) {
-        input = input.replaceAll("(?<= )[A-z\\\\](?= )", "")
-                .replaceAll("[@©ı]", "");
-
+    public static String generateResponse(String systemMessage, String input, String token) {
         JSONObject body = new JSONObject()
                 .put("model", "llama3-8b-8192")
                 .put("messages", new JSONArray()
                         .put(new JSONObject()
                                 .put("role", "system")
-                                .put("content", "Zusammenfassen in Stichpunkten in max. 150 Wörtern. Antwort in der Sprache des Textes.")
+                                .put("content", systemMessage)
                         )
                         .put(new JSONObject()
                                 .put("role", "user")
@@ -42,18 +38,10 @@ public class Groq {
                 .POST(HttpRequest.BodyPublishers.ofString(body.toString()))
                 .build();
 
-        try {
-            AI.USAGE_LIMITER.reserve(1500);
-            HttpResponse<String> response = Utils.tryThis(() -> HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString()));
-            JSONObject responseBody = new JSONObject(response.body());
+        HttpResponse<String> response = Utils.tryThis(() -> HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofString()));
+        JSONObject responseBody = new JSONObject(response.body());
 
-            int usedTokens = responseBody.getJSONObject("usage").getInt("total_tokens");
-            AI.USAGE_LIMITER.use(usedTokens);
-
-            String content = (String) responseBody.query(RESPONSE_POINTER);
-            return content.trim();
-        } finally {
-            AI.USAGE_LIMITER.deReserve(1500);
-        }
+        String content = (String) responseBody.query(RESPONSE_POINTER);
+        return content.trim();
     }
 }

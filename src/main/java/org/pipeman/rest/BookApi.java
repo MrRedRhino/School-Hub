@@ -52,12 +52,16 @@ public class BookApi {
         try {
             ctx.result(AI.getSummary(book, page));
         } catch (UsageLimit.LimitExceededException ignored) {
-            throw ulr();
+            throw new TooManyRequestsResponse("Sorry, the daily usage limit has been exceeded");
         }
     }
 
-    private static TooManyRequestsResponse ulr() {
-        return new TooManyRequestsResponse("Sorry, the daily usage limit has been exceeded");
+    public static void getSpeech(Context ctx) {
+        int book = ctx.pathParamAsClass("book", Integer.class).get();
+        int page = ctx.pathParamAsClass("page", Integer.class).get();
+
+        ctx.contentType(ContentType.AUDIO_AAC);
+        ctx.result(AI.doTTS(book, page));
     }
 
     public static void completions(Context ctx) {

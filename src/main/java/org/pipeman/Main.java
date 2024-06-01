@@ -77,6 +77,7 @@ public class Main {
                         get("{book}", BookApi::getBook);
                         get("{book}/{page}", BookApi::getPage);
                         get("{book}/{page}/summary", BookApi::getSummary);
+                        get("{book}/{page}/speech", BookApi::getSpeech);
                         get("{book}/{page}/annotations", BookApi::getAnnotation);
                         put("{book}/{page}/annotations", BookApi::putAnnotation);
                     });

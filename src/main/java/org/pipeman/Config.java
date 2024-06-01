@@ -31,6 +31,7 @@ public class Config extends AbstractConfig {
     public final String resendKey = this.get("resend-key", "");
 
     public final String aiKey = this.get("ai-key", "");
+    public final String speechKey = this.get("speech-key", "");
     public final int dailyUsageLimit = this.get("daily-usage-limit", 233_333);
 
     public final int adminPassword = this.get("admin-password", 42069);

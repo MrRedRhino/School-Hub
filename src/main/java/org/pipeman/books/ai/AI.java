@@ -3,13 +3,16 @@ package org.pipeman.books.ai;
 import org.pipeman.Config;
 import org.pipeman.Database;
 import org.pipeman.books.TextExtractor;
-import org.pipeman.books.ai.impl.GroqSummarizer;
+import org.pipeman.books.ai.impl.GroqTextProcessor;
+import org.pipeman.books.ai.impl.OpenAITextProcessor;
 
+import java.io.InputStream;
 import java.util.Optional;
 
 public class AI {
     public static final UsageLimit USAGE_LIMITER = new UsageLimit();
-    private static final Summarizer SUMMARIZER = new GroqSummarizer(Config.get().aiKey);
+    private static final TextProcessor TEXT_PROCESSOR = new GroqTextProcessor(Config.get().aiKey);
+    private static final TextProcessor SPEECH_GENERATOR = new OpenAITextProcessor(Config.get().speechKey);
 
     public static String getSummary(int bookId, int page) {
         String key = bookId + " " + page;
@@ -20,11 +23,22 @@ public class AI {
     }
 
     private static String summarize(int bookId, int page) {
-        String summary = SUMMARIZER.summarize(TextExtractor.getText(bookId, page));
+        String text = TextExtractor.getText(bookId, page)
+                .replaceAll("(?<= )[A-z\\\\](?= )", "")
+                .replaceAll("[@©ı]", "");
+        String summary = TEXT_PROCESSOR.summarize(text);
         storeSummary(bookId, page, summary);
         return summary;
     }
 
+    public static InputStream doTTS(int bookId, int page) {
+        String text = TextExtractor.getText(bookId, page)
+                .replaceAll("(?<= )[A-z\\\\](?= )", "")
+                .replaceAll("[@©ı]", "");
+
+        String preparedText = TEXT_PROCESSOR.prepareForTTS(text);
+        return SPEECH_GENERATOR.doTTS(preparedText);
+    }
 
     private static void storeSummary(int bookId, int page, String summary) {
         Database.getJdbi().useHandle(h -> h.createUpdate("""
