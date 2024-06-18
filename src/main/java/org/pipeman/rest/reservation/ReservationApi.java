@@ -152,8 +152,11 @@ public class ReservationApi {
             double centerX = x + seatSize / 2.0;
             double centerY = y + seatSize / 2.0;
 
+            JSONObject location = seatJson.getJSONObject("location");
+            String seatId = location.getString("row") + "-" + location.get("seat");
+            graphics.setColor(reservations.contains(seatId) ? reserved : available);
+
             graphics.setTransform(AffineTransform.getRotateInstance(Math.toRadians(seatJson.getInt("angle")), centerX, centerY));
-            graphics.setColor(reservations.contains(seatJson.getString("id")) ? reserved : available);
             graphics.fill(area);
         }
 
@@ -164,5 +167,9 @@ public class ReservationApi {
 
     public static void sse(SseClient client) {
         Live.addClient(client);
+    }
+
+    public static void getSeats(Context ctx) {
+        ctx.json(SEATS.toList());
     }
 }

@@ -101,6 +101,7 @@ public class Main {
                         put("{seat}", ReservationApi::reserveSeat);
                         delete("{seat}", ReservationApi::removeReservation);
                         post("send-mail", ReservationApi::sendReservationsAsEmail);
+                        get("seats", ReservationApi::getSeats);
                     });
 
                     get("news", NewsApi::getNews);
