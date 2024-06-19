@@ -9,8 +9,9 @@ const {
   location,
   id,
   reservations,
-  maxSeatsReached
-} = defineProps(["location", "id", "reservations", "max-seats-reached"]);
+  maxSeatsReached,
+  blockedFor
+} = defineProps(["location", "id", "reservations", "max-seats-reached", "blockedFor"]);
 const reservist = computed(() => {
   const reservation = reservations.value[id];
   if (reservation === undefined) return null;
@@ -29,10 +30,11 @@ async function toggleReservation() {
   <Popup :title="`Platz reservieren`">
     <SeatLocation style="margin-left: 8px" :location="location"></SeatLocation>
 
-    <h2>Reserviert von: <a>{{ reservist ? reservist : "Nicht reserviert" }}</a></h2>
-    <h2 class="error" v-if="canNotReserve">Die maximale Anzahl an Reservierungen ist erreicht</h2>
+    <h2 v-if="!blockedFor">Reserviert von: <a>{{ reservist ? reservist : "Nicht reserviert" }}</a></h2>
+    <h2 v-else class="error">Für {{ blockedFor }} reserviert</h2>
+    <h2 class="error" v-if="canNotReserve && !blockedFor">Die maximale Anzahl an Reservierungen ist erreicht</h2>
 
-    <button :disabled="canNotReserve || reservations.value[id] && reservations.value[id] !== account.name"
+    <button :disabled="blockedFor || canNotReserve || reservations.value[id] && reservations.value[id] !== account.name"
             @click="toggleReservation">
       {{ reservations.value[id] === account.name ? "Stornieren" : "Reservieren" }}
     </button>

@@ -37,6 +37,12 @@ public class ReservationApi {
         long userId = LoginApi.getUser(ctx).id();
 
         String seatId = ctx.pathParam("seat");
+        for (Object seat : SEATS) {
+            JSONObject seatObject = (JSONObject) seat;
+            if (getId(seatObject).equals(seatId) && !seatObject.isNull("blockedFor")) {
+                throw new BadRequestResponse("Seat is blocked");
+            }
+        }
 
         boolean success = Database.getJdbi().withHandle(h -> h.createUpdate("""
                         INSERT INTO reservations (seat, user_id)
@@ -152,9 +158,7 @@ public class ReservationApi {
             double centerX = x + seatSize / 2.0;
             double centerY = y + seatSize / 2.0;
 
-            JSONObject location = seatJson.getJSONObject("location");
-            String seatId = location.getString("row") + "-" + location.get("seat");
-            graphics.setColor(reservations.contains(seatId) ? reserved : available);
+            graphics.setColor(reservations.contains(getId(seatJson)) ? reserved : available);
 
             graphics.setTransform(AffineTransform.getRotateInstance(Math.toRadians(seatJson.getInt("angle")), centerX, centerY));
             graphics.fill(area);
@@ -163,6 +167,11 @@ public class ReservationApi {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
         ImageIO.write(image, "png", stream);
         return stream.toByteArray();
+    }
+
+    private static String getId(JSONObject seat) {
+        JSONObject location = seat.getJSONObject("location");
+        return location.getString("row") + "-" + location.get("seat");
     }
 
     public static void sse(SseClient client) {

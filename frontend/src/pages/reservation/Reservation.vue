@@ -8,13 +8,14 @@ import SeatLocation from "@/pages/reservation/SeatLocation.vue";
 import LoadingSpinner from "@/components/LoadingSpinner.vue";
 
 const {appContext} = getCurrentInstance();
-const seats = ref([]);
+const loading = computed(() => seats.length === 0 || !connected.value && account.value);
 
 const mailAddress = ref();
 const sendingMail = ref(false);
 const invalidMail = ref(false);
 const mailMessage = ref();
 
+const seats = ref([]);
 const reservations = ref({});
 const ownReservationsShown = ref(false);
 const ownReservations = computed(() => {
@@ -70,19 +71,23 @@ function connect() {
   clearTimeout(reconnect);
   eventSource.onerror = () => {
     connected.value = false;
+    clearTimeout(reconnect);
     reconnect = setTimeout(connect, 2000);
   };
 }
 
 connect();
 
-function reserveSeat(location) {
+function reserveSeat(seat) {
+  const location = seat.location;
+
   requireAuth("einen Platz zu reservieren", appContext, () => {
     openPopup(SeatPopup, appContext, {
       location: location,
       id: getId(location),
       reservations: reservations,
-      "max-seats-reached": maxSeatsReached
+      "max-seats-reached": maxSeatsReached,
+      blockedFor: seat.blockedFor
     });
   });
 }
@@ -101,10 +106,12 @@ function getId(location) {
   return location.row + "-" + location.seat;
 }
 
-function getColor(reservation) {
+function getColor(seat) {
+  const reservation = reservations.value[getId(seat.location)];
+
   if (account.value && reservation === account.value.name) {
     return "#ff2046";
-  } else if (reservation === undefined) {
+  } else if (reservation === undefined && !seat.blockedFor) {
     return "#00bf4b";
   }
   return "#B3B3B3";
@@ -140,7 +147,7 @@ fetch("/api/reservations/seats")
 
 <template>
   <div>
-    <LoadingSpinner v-if="seats.length === 0 || !connected"></LoadingSpinner>
+    <LoadingSpinner v-if="loading"></LoadingSpinner>
 
     <div class="plan-wrapper">
       <div class="reservations-wrapper" v-click-outside="hideReservations">
@@ -162,11 +169,11 @@ fetch("/api/reservations/seats")
         </Transition>
       </div>
 
-      <PinchZoom v-if="seats.length > 0 && connected">
+      <PinchZoom v-if="!loading">
         <div v-for="seat in seats"
              class="seat"
-             :style="{transform: `translate(${seat.x}px, ${seat.y}px) rotate(${seat.angle + 'deg'})`, background: getColor(reservations[getId(seat.location)])}"
-             @click="reserveSeat(seat.location)">
+             :style="{transform: `translate(${seat.x}px, ${seat.y}px) rotate(${seat.angle + 'deg'})`, background: getColor(seat)}"
+             @click="reserveSeat(seat)">
         </div>
 
         <svg class="stage-svg" width="1600" height="800">
