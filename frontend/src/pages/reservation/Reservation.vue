@@ -19,6 +19,7 @@ const seats = ref([]);
 const reservations = ref({});
 const ownReservationsShown = ref(false);
 const ownReservations = computed(() => {
+  if (!account.value) return [];
   const result = [];
   for (const reservation in reservations.value) {
     if (reservations.value[reservation] === account.value.name) {
@@ -31,6 +32,7 @@ const ownReservations = computed(() => {
 
 let maxSeats = null;
 const maxSeatsReached = computed(() => {
+  if (!account.value) return false;
   let count = 0;
   for (const reservation in reservations.value) {
     if (reservations.value[reservation] === account.value.name) {
