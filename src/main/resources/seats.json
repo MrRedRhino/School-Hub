@@ -1097,7 +1097,7 @@
       "seat": 1,
       "row": "R1"
     },
-    "blockedFor": null
+    "blockedFor": "Ehrengäste"
   },
   {
     "x": 468,
@@ -1107,7 +1107,7 @@
       "seat": 2,
       "row": "R1"
     },
-    "blockedFor": null
+    "blockedFor": "Ehrengäste"
   },
   {
     "x": 507,
@@ -1117,7 +1117,7 @@
       "seat": 3,
       "row": "R1"
     },
-    "blockedFor": null
+    "blockedFor": "Ehrengäste"
   },
   {
     "x": 546,
@@ -1127,7 +1127,7 @@
       "seat": 4,
       "row": "R1"
     },
-    "blockedFor": null
+    "blockedFor": "Ehrengäste"
   },
   {
     "x": 585,
@@ -1137,7 +1137,7 @@
       "seat": 5,
       "row": "R1"
     },
-    "blockedFor": null
+    "blockedFor": "Ehrengäste"
   },
   {
     "x": 624,
@@ -1147,7 +1147,7 @@
       "seat": 6,
       "row": "R1"
     },
-    "blockedFor": null
+    "blockedFor": "Ehrengäste"
   },
   {
     "x": 663,
@@ -1157,7 +1157,7 @@
       "seat": 7,
       "row": "R1"
     },
-    "blockedFor": null
+    "blockedFor": "Ehrengäste"
   },
   {
     "x": 702,
@@ -1167,7 +1167,7 @@
       "seat": 8,
       "row": "R1"
     },
-    "blockedFor": null
+    "blockedFor": "Ehrengäste"
   },
   {
     "x": 741,
@@ -1177,7 +1177,7 @@
       "seat": 9,
       "row": "R1"
     },
-    "blockedFor": null
+    "blockedFor": "Ehrengäste"
   },
   {
     "x": 780,
@@ -1187,7 +1187,7 @@
       "seat": 10,
       "row": "R1"
     },
-    "blockedFor": null
+    "blockedFor": "Ehrengäste"
   },
   {
     "x": 475,
