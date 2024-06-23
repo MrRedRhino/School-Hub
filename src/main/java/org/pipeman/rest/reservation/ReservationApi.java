@@ -1,9 +1,5 @@
 package org.pipeman.rest.reservation;
 
-import com.resend.Resend;
-import com.resend.core.exception.ResendException;
-import com.resend.services.emails.model.Attachment;
-import com.resend.services.emails.model.CreateEmailOptions;
 import io.javalin.http.BadRequestResponse;
 import io.javalin.http.Context;
 import io.javalin.http.sse.SseClient;
@@ -16,6 +12,7 @@ import org.pipeman.rest.User;
 import org.pipeman.utils.Utils;
 
 import javax.imageio.ImageIO;
+import javax.mail.MessagingException;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Area;
@@ -24,14 +21,12 @@ import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Base64;
 import java.util.List;
 
 public class ReservationApi {
     private static final JSONArray SEATS = new JSONArray(Utils.readResourceString("seats.json"));
     private static final String emailBody = Utils.readResourceString("email-template.html");
     private static final String emailListEntry = Utils.readResourceString("seat_template.html");
-    private static final Resend resend = new Resend(Config.get().resendKey);
 
     public static void reserveSeat(Context ctx) {
         long userId = LoginApi.getUser(ctx).id();
@@ -83,7 +78,7 @@ public class ReservationApi {
         }
     }
 
-    public static void sendReservationsAsEmail(Context ctx) throws IOException, ResendException {
+    public static void sendReservationsAsEmail(Context ctx) throws IOException, MessagingException {
         User user = LoginApi.getUser(ctx);
         String recipientEmail = ctx.queryParamAsClass("email-address", String.class).get();
 
@@ -96,24 +91,10 @@ public class ReservationApi {
                 .mapTo(String.class)
                 .list());
 
-        Attachment att = Attachment.builder()
-                .fileName("plan.png")
-                .content(Base64.getEncoder().encodeToString(createPlan(reservations)))
-                .build();
-
-        CreateEmailOptions sendEmailRequest = CreateEmailOptions.builder()
-                .from("Tickets <tickets@pipeman.org>")
-                .to(recipientEmail)
-                .html(getEmailContent(user.data().surname(), reservations))
-                .subject("Deine Abi-Feier Reservierungen")
-                .attachments(att)
-                .build();
-
-        try {
-            resend.emails().send(sendEmailRequest);
-        } catch (RuntimeException e) {
-            throw new BadRequestResponse("Invalid e-mail address");
-        }
+        SES.sendReservationConfirmation(recipientEmail, "Deine Abi-Feier Reservierungen",
+                getEmailContent(user.data().surname(), reservations),
+                createPlan(reservations)
+        );
     }
 
     private static String getEmailContent(String username, List<String> reservations) {
